@@ -8,11 +8,19 @@ FP8 forward attention for NVIDIA Blackwell (B200 / B300), built on the FlashAtte
 - fused three-kernel input preparation on B200;
 - optional V residual repair.
 
+<p align="center"><img src="docs/technical-report/figures/pipeline.png" alt="One iteration of the Open-VC main loop" width="880"></p>
+
+<p align="center"><em>One iteration of the main loop for a 128-row query tile: tensor-core work (blue), CUDA-core softmax work (orange) and data movement (gray).</em></p>
+
 See the [technical report](docs/technical-report/report.en.md) for the design and its numerics.
 
 ## Results
 
 B200, BF16 Q/K/V captured from a MiniMax-H3 video denoising step, `S = 73,397`, `D = 128`. Speedups are relative to upstream FlashAttention-4 BF16 (`flash-attn-4` 4.0.0b33) in the same run. VC is VC-Attention's method (ExpCast + V-Smooth) on the same kernel family, without Open-VC's optimizations; its k-means grouping, which runs only on early denoising steps, is amortized in [performance](docs/performance.md#v-smooth-grouping).
+
+<p align="center"><img src="docs/technical-report/figures/throughput.png" alt="Attention throughput of BF16, VC and Open-VC on B200" width="880"></p>
+
+<p align="center"><em>Attention throughput on B200 (PFLOP/s, FLOP model 4S²HD). Labels give Open-VC's speedup over BF16; the solid line is the ceiling for a kernel that sends every exponential through MUFU.</em></p>
 
 | Heads | Scope | BF16 (ms) | VC (ms) | Open-VC (ms) | VC speedup | Open-VC speedup |
 |---:|---|---:|---:|---:|---:|---:|
