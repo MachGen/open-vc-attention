@@ -1,12 +1,12 @@
 cff-version: 1.2.0
 message: "Please cite the software revision and the upstream FlashAttention papers."
-title: "VC Attention"
+title: "Open-VC Attn: FP8 attention with softmax casting for long-sequence video diffusion on NVIDIA Blackwell"
 type: software
-version: 0.1.2
+version: 0.3.0
 license: BSD-3-Clause
 authors:
-  - name: "VC Attention contributors"
-repository-code: "https://github.com/MachGen/vc-attention"
+  - name: "MachGen AI"
+repository-code: "https://github.com/MachGen/open-vc-attention"
 references:
   - type: article
     title: "VC-Attention: Value Smoothing and Softmax Casting for Low-bit Attention"

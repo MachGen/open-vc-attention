@@ -8,7 +8,7 @@ The project homepage should display the [root README](../README.md).
 - [workflows/](workflows/README.md) defines CPU CI and manual Blackwell validation.
 - [ISSUE_TEMPLATE/](ISSUE_TEMPLATE/README.md) provides a reproducible bug-report template.
 
-These files configure repository workflows; they are not imported by `vc_attn`.
+These files configure repository workflows; they are not imported by `open_vc_attn`.
 Project contribution and reporting guidance is in [CONTRIBUTING](../CONTRIBUTING.md)
 and [SECURITY](../SECURITY.md).
 

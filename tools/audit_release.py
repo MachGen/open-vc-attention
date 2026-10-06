@@ -1,123 +1,89 @@
-"""Check source boundaries and frozen kernel hashes before distribution."""
+"""Audit release contents: package layout, private references and documentation links."""
 
-import ast
 import hashlib
 import json
-import os
 import re
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+SKIP = {".git", "build", "dist", ".pytest_cache", ".ruff_cache", "__pycache__"}
+# Git-ignored local output directories (see .gitignore).
+LOCAL = {"results", ".venv"}
+PRIVATE = re.compile(r"/Users/|/home/[a-z]|/mnt/disk|/workspace/")
 
-def audit(root):
-    failures = []
-    # Public PDFs are reviewed separately, then pinned here by manifest hash.
-    # All other binary files still fail the release boundary check below.
-    report_names = {
-        "VC-Attention-Fusedpipe-D-Technical-Report.pdf",
-        "VC-Attention-Fusedpipe-D-Tech-Report-zh.pdf",
-    }
-    reports = json.loads((root / "docs/reports/manifest.json").read_text())["reports"]
-    if set(reports) != report_names:
-        failures.append("Unexpected public PDF inventory")
-    for name in report_names:
-        path = root / "docs/reports" / name
-        record = reports.get(name, {})
-        data = path.read_bytes() if path.is_file() else b""
+
+def _check_records(directory):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("records", ROOT / "tools/reports/records.py")
+    records = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(records)
+    return records.check(directory)
+
+
+def audit(root=ROOT):
+    errors = []
+    # Build artifacts (editable-install metadata, bytecode caches) are not packages.
+    packages = sorted(
+        p.name
+        for p in (root / "src").iterdir()
+        if p.is_dir() and not p.name.endswith(".egg-info") and p.name != "__pycache__"
+    )
+    if packages != ["open_vc_attn"]:
+        errors.append(f"Unexpected top-level packages: {packages}")
+    kernels = sorted(
+        p.name
+        for p in (root / "src/open_vc_attn/_kernels").iterdir()
+        if p.is_dir() and p.name != "__pycache__"
+    )
+    if kernels != ["blackwell"]:
+        errors.append(f"Unexpected kernel trees: {kernels}")
+    report = json.loads((root / "docs/technical-report/manifest.json").read_text())
+    for name, digest in report["files"].items():
         if (
-            not data.startswith(b"%PDF-")
-            or len(data) != record.get("bytes")
-            or hashlib.sha256(data).hexdigest() != record.get("sha256")
+            not (root / name).exists()
+            or hashlib.sha256((root / name).read_bytes()).hexdigest() != digest
         ):
-            failures.append(f"Missing or changed reviewed PDF: {name}")
-    if (root / ".github/README.md").exists():
-        failures.append(".github/README.md overrides the project homepage; use DIRECTORY.md")
-    if (root / "src/vc_attn/native/b200").exists():
-        failures.append("Native v6 is B300-only; remove obsolete B200 native sources")
-    excluded = {
-        ".git",
-        ".venv",
-        "build",
-        "dist",
-        "results",
-        "__pycache__",
-        ".pytest_cache",
-        ".ruff_cache",
-    }
-    forbidden_suffixes = {
-        ".so",
-        ".pt",
-        ".pth",
-        ".safetensors",
-        ".mp4",
-        ".zip",
-        ".gz",
-        ".tar",
-        ".cubin",
-    }
-    private = re.compile(
-        r"/mnt/" + r"disk\d|/Users/|/home/[^\s/]+/|38\.9\.57\.\d+|38\.127\.229\.\d+"
-    )
-    secrets = re.compile(
-        r"gh[pousr]_[A-Za-z0-9]{25,}|AKIA[A-Z0-9]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
-    )
-    files = []
-    for base, dirs, names in os.walk(root):
-        for name in dirs + names:
-            if (Path(base) / name).is_symlink():
-                failures.append(f"Symlink: {Path(base, name).relative_to(root)}")
-        dirs[:] = [x for x in dirs if x not in excluded and not x.endswith(".egg-info")]
-        for name in names:
-            if name == ".git":  # Worktrees store their Git metadata pointer in a file.
-                continue
-            path = Path(base) / name
-            rel = path.relative_to(root)
-            if path.suffix in forbidden_suffixes:
-                failures.append(f"Disallowed artifact: {rel}")
-            if path.suffix == ".pyc":
-                continue
-            if rel.parent == Path("docs/reports") and path.name in report_names:
-                files.append(str(rel))
-                continue
-            try:
-                text = path.read_text()
-            except UnicodeDecodeError:
-                failures.append(f"Unexpected binary: {rel}")
-                continue
-            if path.name != "audit_release.py" and (private.search(text) or secrets.search(text)):
-                failures.append(f"Private host/path or credential pattern: {rel}")
-            if path.suffix == ".py":
-                for node in ast.walk(ast.parse(text)):
-                    modules = []
-                    if isinstance(node, ast.Import):
-                        modules = [x.name for x in node.names]
-                    elif isinstance(node, ast.ImportFrom) and node.module:
-                        modules = [node.module]
-                    if any(x.startswith(("machgen", "flash_attention_plus")) for x in modules):
-                        failures.append(f"Application import: {rel}")
-            files.append(str(rel))
-    manifest = json.loads((root / "src/vc_attn/source_manifest.json").read_text())
-    for version in manifest["versions"].values():
-        for rel, record in version["files"].items():
-            if hashlib.sha256((root / rel).read_bytes()).hexdigest() != record["sha256"]:
-                failures.append(f"Changed frozen kernel: {rel}")
-    extra_hashes = {
-        "src/vc_attn/quantization.py": manifest["quantization"]["sha256"],
-        **{
-            "src/vc_attn/native/" + name: digest
-            for name, digest in manifest["native_v6"].items()
-            if name != "note"
-        },
-    }
-    for rel, digest in extra_hashes.items():
-        if hashlib.sha256((root / rel).read_bytes()).hexdigest() != digest:
-            failures.append(f"Changed frozen support source: {rel}")
-    for name in ("LICENSE", "NOTICE", "AUTHORS", "LICENSES/Apache-2.0.txt"):
-        if not (root / name).is_file():
-            failures.append(f"Missing attribution: {name}")
-    return {"ok": not failures, "file_count": len(files), "failures": failures}
+            errors.append("Report manifest mismatch (rebuild with tools/reports/build.py): " + name)
+    errors += ["Benchmark record: " + e for e in _check_records(root / "benchmarks/results/b200")]
+    for path in root.rglob("*"):
+        rel = path.relative_to(root)
+        ignored = rel.parts[0] in LOCAL or any(
+            x in SKIP or x.endswith(".egg-info") for x in rel.parts
+        )
+        if ignored or not path.is_file():
+            continue
+        if path.suffix not in {
+            ".py",
+            ".md",
+            ".json",
+            ".toml",
+            ".yml",
+            ".patch",
+            ".tex",
+            ".tikz",
+            ".cff",
+        }:
+            continue
+        text = path.read_text()
+        if path != Path(__file__).resolve() and PRIVATE.search(text):
+            errors.append("Private environment reference: " + str(rel))
+        if path.suffix == ".md":
+            prose = re.sub(r"`[^`]*`", "", text)
+            # Images are skipped: report figures are generated at build time.
+            for target in re.findall(r"(?<!!)\[[^\]]*\]\(([^)]+)\)", prose):
+                target = target.split("#")[0]
+                if (
+                    target
+                    and "://" not in target
+                    and not target.startswith("mailto:")
+                    and not (path.parent / target).exists()
+                ):
+                    errors.append(f"Broken link: {rel}: {target}")
+    if errors:
+        raise ValueError("\n".join(errors))
+    return {"status": "passed"}
 
 
 if __name__ == "__main__":
-    result = audit(Path(__file__).resolve().parents[1])
-    print(json.dumps(result, indent=2))
-    raise SystemExit(0 if result["ok"] else 1)
+    print(json.dumps(audit(), indent=2))

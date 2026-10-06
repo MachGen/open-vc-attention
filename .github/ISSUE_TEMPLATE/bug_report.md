@@ -3,9 +3,9 @@ name: Bug report
 about: Report an attention correctness, build, or integration issue
 ---
 
-GPU / driver and the metadata-only `vc-attn-check` output (review before sharing):
+GPU / driver and the metadata-only `open-vc-attn-check` output (review before sharing):
 
-VC Attention revision and selected backend:
+Open-VC Attn version and selected backend:
 
 Minimal synthetic reproducer (no private tensors, paths, or credentials):
 

@@ -1,40 +1,54 @@
 import ast
-import hashlib
 import subprocess
 import sys
 import unittest
 from pathlib import Path
 
-from vc_attn.integrations.packed import segments
-from vc_attn.measurement import parse_shape, speedup, summarize
-from vc_attn.registry import DEFAULT_BACKENDS, DEFAULT_VERSION, get_backend, source_manifest
+from open_vc_attn._dispatch import DEFAULT_VERSION
+from open_vc_attn.benchmarking.backends import DEFAULT_BACKENDS, get_backend
+from open_vc_attn.benchmarking.measurement import parse_shape, speedup, summarize
+from open_vc_attn.integrations.packed import segments
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class Contracts(unittest.TestCase):
-    def test_default_selects_synced_snapshot_and_retains_historical_backends(self):
-        self.assertEqual(DEFAULT_VERSION, "v4")
-        self.assertEqual(DEFAULT_BACKENDS[-1], "vc_v4_mid4")
-        self.assertEqual(get_backend(DEFAULT_BACKENDS[-1]).mode, "expcast_mid4")
-        self.assertEqual(get_backend("vc_v4").mode, "expcast")
-        self.assertEqual(get_backend("vc_v4").version, DEFAULT_VERSION)
-        self.assertEqual(get_backend("fp8_v4").version, DEFAULT_VERSION)
-        self.assertEqual(get_backend("vc_scaled").version, "scaled")
-        manifest = source_manifest()["versions"]
-        self.assertEqual(
-            manifest["v4"]["source_revision"], "8aa761eac845d734dc5dbe48a6196c1fe1b0a7cf"
-        )
-        self.assertEqual(
-            manifest["scaled"]["source_revision"], "4245ca87a02a476e89b793a5541a1f0576684b01"
-        )
+    def test_default_implementation_and_reference_identity(self):
+        self.assertEqual(DEFAULT_VERSION, "open-vc")
+        self.assertEqual(DEFAULT_BACKENDS, ("bf16", "vc", "open-vc"))
+        self.assertEqual(get_backend("open-vc").mode, "expcast")
+        self.assertEqual(get_backend("vc").mode, "vsmooth")
+        self.assertEqual(get_backend("bf16").version, "reference")
 
     def test_gpu_uuid_forms(self):
-        from vc_attn.benchmark import _nvidia_uuid
+        from open_vc_attn.benchmarking.runner import _nvidia_uuid
 
         self.assertEqual(_nvidia_uuid("abc"), "GPU-abc")
         self.assertEqual(_nvidia_uuid("GPU-abc"), "GPU-abc")
         self.assertEqual(_nvidia_uuid("MIG-abc"), "MIG-abc")
+
+    def test_provenance_covers_kernel_sources(self):
+        import shutil
+        import tempfile
+
+        from open_vc_attn.benchmarking.runner import _runtime_provenance
+
+        tuning = "_kernels/blackwell/flash_attn/cute/fp8_tuning.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            copy = Path(tmp) / "open_vc_attn"
+            shutil.copytree(ROOT / "src/open_vc_attn", copy)
+            before = _runtime_provenance(copy)
+            self.assertIn(tuning, before["source_sha256"])
+            self.assertIn("_kernels/blackwell/v_smooth.py", before["source_sha256"])
+            path = copy / tuning
+            text = path.read_text()
+            self.assertIn("split_encoding = tuned and expcast", text)
+            path.write_text(
+                text.replace("split_encoding = tuned and expcast", "split_encoding = False")
+            )
+            after = _runtime_provenance(copy)
+        self.assertNotEqual(before["package_sha256"], after["package_sha256"])
+        self.assertNotEqual(before["source_sha256"][tuning], after["source_sha256"][tuning])
 
     def test_pairing_is_not_ratio_of_independent_medians(self):
         result = speedup([1, 2, 100], [1, 100, 2])
@@ -54,8 +68,9 @@ class Contracts(unittest.TestCase):
                 parse_shape(bad)
         with self.assertRaises(ValueError):
             get_backend("fastest")
-        self.assertEqual(get_backend("fp8_ref").mode, "fp8")
-        self.assertEqual(get_backend("bf16_ref").mode, "bf16")
+        with self.assertRaises(ValueError):
+            get_backend("fp8")
+        self.assertEqual(get_backend("bf16").mode, "bf16")
 
     def test_packed_boundaries_do_not_merge_sequences(self):
         self.assertEqual(segments((0, 129, 386), 386, 257), [(0, 129, False), (129, 386, False)])
@@ -72,26 +87,43 @@ class Contracts(unittest.TestCase):
             [
                 sys.executable,
                 "-c",
-                "import sys,vc_attn; from vc_attn.registry import BACKENDS; "
-                "assert 'torch' not in sys.modules; assert len(BACKENDS)>5",
+                "import sys,open_vc_attn; from open_vc_attn.benchmarking.backends import BACKENDS; "
+                "assert 'torch' not in sys.modules; assert len(BACKENDS)==3",
             ],
             capture_output=True,
             text=True,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         result = subprocess.run(
-            [sys.executable, "-m", "vc_attn.benchmark", "--help"], capture_output=True, text=True
+            [sys.executable, "-m", "open_vc_attn.cli.bench", "--help"],
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_frozen_kernel_provenance(self):
-        manifest = source_manifest()
-        for version in manifest["versions"].values():
-            self.assertEqual(len(version["source_revision"]), 40)
-            for name, record in version["files"].items():
-                self.assertEqual(
-                    hashlib.sha256((ROOT / name).read_bytes()).hexdigest(), record["sha256"], name
+    def test_cli_metadata_and_invalid_arguments_without_torch(self):
+        import json
+
+        result = subprocess.run(
+            [sys.executable, "-m", "open_vc_attn.cli.info"], capture_output=True, text=True
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(list(json.loads(result.stdout)["backends"]), ["bf16", "vc", "open-vc"])
+        for args in (
+            ["--shapes", "0x7x128"],
+            ["--backends", "fp8"],
+            ["--repair-budget", "nan"],
+            ["--repair-budget", "1"],
+            ["--preparation", "fused"],
+            ["--backends", "bf16", "vc", "--repair-budget", "0.01"],
+        ):
+            with self.subTest(args=args):
+                result = subprocess.run(
+                    [sys.executable, "-m", "open_vc_attn.cli.bench", *args],
+                    capture_output=True,
+                    text=True,
                 )
+                self.assertEqual(result.returncode, 2, result.stderr)
 
     def test_runtime_has_no_platform_dependency(self):
         for path in (ROOT / "src").rglob("*.py"):

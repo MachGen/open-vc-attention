@@ -1,0 +1,115 @@
+% LaTeX template for the technical report; tools/reports/md2tex.py fills the double-angle-bracket fields.
+\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------------- fonts & layout
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,mathtools}
+\usepackage{txfonts}
+\usepackage[scaled=0.92]{helvet}
+\usepackage{textcomp}
+\usepackage[a4paper,left=2.3cm,right=2.3cm,top=2.6cm,bottom=2.5cm,headsep=0.9cm]{geometry}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs,array,tabularx,multirow,makecell}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{placeins}
+\usepackage{float}
+\setcounter{tocdepth}{1}
+\usepackage{multicol}
+\usepackage{tocloft}
+\renewcommand{\cftsecfont}{\sffamily\small}
+\renewcommand{\cftsecpagefont}{\sffamily\small}
+\setlength{\cftbeforesecskip}{3pt}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\usepackage{siunitx}
+\sisetup{group-separator={,},group-minimum-digits=4}
+\usepackage[colorlinks=true,linkcolor=mgteal,citecolor=mgteal,urlcolor=mgteal,pdfusetitle]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+% ---------------------------------------------------------------- colours
+\definecolor{mgteal}{HTML}{17808E}
+\definecolor{mgdark}{HTML}{12343F}
+\definecolor{mgmuted}{HTML}{52514E}
+\definecolor{mglight}{HTML}{898781}
+\definecolor{cblue}{HTML}{2A78D6}
+\definecolor{corange}{HTML}{EB6834}
+\definecolor{cgraylt}{HTML}{F3F2EF}
+\definecolor{cgraymd}{HTML}{E1E0D9}
+\definecolor{codebg}{HTML}{F5F7F8}
+
+% ---------------------------------------------------------------- styling
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\linespread{1.06}
+\captionsetup{font={small},labelfont={bf,sf,color=mgdark},labelsep=period,margin=0.5cm,skip=6pt}
+\titleformat{\section}{\sffamily\Large\bfseries\color{mgdark}}{\color{mgteal}\thesection}{0.7em}{}
+\titleformat{\subsection}{\sffamily\large\bfseries\color{mgdark}}{\color{mgteal}\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\sffamily\normalsize\bfseries\color{mgdark}}{}{0em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.5em}
+\titlespacing*{\subsection}{0pt}{1.1em}{0.35em}
+\titlespacing*{\subsubsection}{0pt}{0.8em}{0.2em}
+\setlist{itemsep=0.25em,topsep=0.3em,leftmargin=1.3em}
+\renewcommand{\arraystretch}{1.12}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\footnotesize\color{mgmuted}<<title>> \textperiodcentered{} Technical report}
+\fancyhead[R]{\sffamily\footnotesize\color{mgmuted}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{{\color{cgraymd}\hrule width\headwidth height\headrulewidth}}
+\fancypagestyle{first}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
+  \fancyfoot[C]{\sffamily\footnotesize\color{mgmuted}\thepage}}
+
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codebg},frame=single,rulecolor=\color{cgraymd},
+  framesep=4pt,xleftmargin=4pt,xrightmargin=4pt,columns=fullflexible,keepspaces=true,
+  commentstyle=\color{mgmuted},showstringspaces=false,aboveskip=0.6em,belowskip=0.4em}
+
+\newtcolorbox{keybox}[1][]{colback=cgraylt,colframe=cgraylt,boxrule=0pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt,
+  fontupper=\small,#1}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\PFs}{PFLOP/s}
+\newcommand{\x}{\ensuremath{\times}}
+\input{tables/numbers.tex}
+
+\hypersetup{pdftitle={<<pdftitle>>}, pdfauthor={<<author>>}}
+
+\begin{document}
+\thispagestyle{first}
+
+{\color{mgteal}\rule{\textwidth}{3pt}}\par
+\vspace{4pt}
+{\sffamily\footnotesize\color{mgmuted}TECHNICAL REPORT \quad\textperiodcentered\quad REVISION <<revision>> \quad\textperiodcentered\quad <<date>>\par}
+\vspace{14pt}
+{\sffamily\bfseries\fontsize{26}{30}\selectfont\color{mgdark}<<title>>\par}
+\vspace{6pt}
+{\sffamily\fontsize{15}{19}\selectfont\color{mgdark}<<subtitle>>\par}
+\vspace{12pt}
+{\sffamily\large <<author>>\par}
+\vspace{3pt}
+{\sffamily\footnotesize\color{mgmuted}Code: <<code>> \quad\textperiodcentered\quad Package: <<package>> \quad\textperiodcentered\quad License: <<license>>\par}
+\vspace{16pt}
+
+\begin{keybox}
+{\sffamily\bfseries\color{mgdark}Abstract.}\enspace
+<<abstract>>
+\end{keybox}
+
+\vspace{2pt}
+{\sffamily\bfseries\large\color{mgdark}Contents\par}\vspace{4pt}
+{\setlength{\parskip}{0pt}\setlength{\columnsep}{1.2cm}\begin{multicols}{2}\makeatletter\@starttoc{toc}\makeatother\end{multicols}}
+\clearpage
+
+<<body>>
+
+\end{document}

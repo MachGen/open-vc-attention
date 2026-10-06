@@ -1,0 +1,952 @@
+{
+ "schema": "open-vc-comparison-v3",
+ "gpu": "NVIDIA B200",
+ "input": "BF16 Q/K/V captured from a MiniMax-H3 video denoising step (step 24, transformer block 20; 821 text tokens and 72 latent frames of 1,008 tokens), after QK norm/RoPE; H7 and H14 are the first heads of the H56 capture. Tensors are private.",
+ "timing": {
+  "unit": "milliseconds per CUDA Graph replay",
+  "order": "paired rounds in randomized order (seeded)",
+  "statistic": "speedup = BF16 median / candidate median, per scope",
+  "attention": "one attention kernel per replay; inputs, including packed V, prepared beforehand (Open-VC: fused or packed preparation, V repair: packed repair rows; VC: grouped, permuted and quantized)",
+  "complete_call": "the full call from BF16 inputs, including metadata and FP8 preparation (VC: V-Smooth preparation with the reused grouping)",
+  "rounds": 12,
+  "repeats_per_sample": 10,
+  "warm_calls_per_sample": 6
+ },
+ "isolation": "GPU ownership checked before and after every sample; no other compute process",
+ "versions": {
+  "open-vc-attn": "0.3.0",
+  "torch": "2.11.0+cu130",
+  "triton": "3.6.0",
+  "nvidia-cutlass-dsl": "4.6.2",
+  "quack-kernels": "0.6.4",
+  "flash-attn-4": "4.0.0b33",
+  "cuda-python": "13.0.3"
+ },
+ "device_start": {
+  "driver_version": "590.48.01",
+  "pstate": "P0",
+  "clocks.sm": "1965",
+  "clocks.mem": "3996",
+  "power.limit": "1000.00"
+ },
+ "source_provenance": {
+  "package_sha256": "77bdc0164c1cdd126cbf77903ce2e60e5c492a6cfc9e516f93c86f695ad04bec",
+  "source_sha256": {
+   "__init__.py": "eae46274ad1dbd51b2849b9bdd39140ee9ec2dcd4f390dd679b7255e8fac1728",
+   "_dispatch.py": "e2e45ff7c4c1d853489e922017c6b2b40e8652b0d5b1e90c5989cc2d92318dca",
+   "_kernels/__init__.py": "41bfb2abb7b1ae1a35125a854fe9968438e935462a2a5f7da022c7cb4bc89895",
+   "_kernels/blackwell/__init__.py": "7902e600f83b5ae9b3f618933b0b7ab96e694e7e088aaf6d4781f3374357715b",
+   "_kernels/blackwell/flash_attn/__init__.py": "7902e600f83b5ae9b3f618933b0b7ab96e694e7e088aaf6d4781f3374357715b",
+   "_kernels/blackwell/flash_attn/cute/__init__.py": "7902e600f83b5ae9b3f618933b0b7ab96e694e7e088aaf6d4781f3374357715b",
+   "_kernels/blackwell/flash_attn/cute/blackwell_helpers.py": "93c65e45365d9ed488aba4c197f1de911b8da93f44ad3cded34ae3a9950e4cc5",
+   "_kernels/blackwell/flash_attn/cute/block_info.py": "13f375f64bf5daa1cfb5480e39c3d74c2adb017f4323b54b339d74f02f357ee9",
+   "_kernels/blackwell/flash_attn/cute/block_sparse_utils.py": "1b9653c9dc684a2d5b862c7ecde8a33a4a050cf66cd63c1fe5c5342e0397a77a",
+   "_kernels/blackwell/flash_attn/cute/block_sparsity.py": "aa2d6db0f4a9f06a424c1369487ac5f2db2f31a426984eccd9e9fe2b790e98bd",
+   "_kernels/blackwell/flash_attn/cute/copy_utils.py": "44fdafecb0df34e88b25a78e6a2ba3ec9a9b64406de0e0182b3d59d40721190a",
+   "_kernels/blackwell/flash_attn/cute/cute_dsl_ptxas.py": "59823dd39cab243fe439a8bdb52843cd2f48f48fdd0344ef7be8f5e84f5684e2",
+   "_kernels/blackwell/flash_attn/cute/cute_dsl_utils.py": "506ad191e3457edb6dcf103c918e97d95b6b838ebec1c320b078d894f7de4ab0",
+   "_kernels/blackwell/flash_attn/cute/fast_math.py": "7e5f822bf4d0ba36967558f3ae9a1408b410cb726c31222cd61703569d1be738",
+   "_kernels/blackwell/flash_attn/cute/flash_fwd_combine.py": "dab3ac0389e81556c506e36b9eafa643ba1e03a0a806637779a62a2332f86284",
+   "_kernels/blackwell/flash_attn/cute/flash_fwd_sm100.py": "e18689501d8a1bddc512888f3f157113cbff061acb2b53dc0089a9415b218701",
+   "_kernels/blackwell/flash_attn/cute/fp8_tuning.py": "df6f8f1779f3e02c05251fc3d74817b969e8b957891f4b2100ad75ab118866c6",
+   "_kernels/blackwell/flash_attn/cute/interface.py": "83cb4cd44438fa101b3bab1158ff8dcb45b28baef889791753de892a29442172",
+   "_kernels/blackwell/flash_attn/cute/mask.py": "31c2a51613c8a3d5d677ce5bf91703e3ce076947720db0bfbb8e7d21cef2159c",
+   "_kernels/blackwell/flash_attn/cute/mma_sm100_desc.py": "dc56d8adbc100785c6e5b5d9ef063de3ae954bf9b9fbebdc6cf9543256da0f71",
+   "_kernels/blackwell/flash_attn/cute/pack_gqa.py": "04597b9e9235e21c8c716def8da8a6377d032ec67d6b554945c2ea1f34caf9f5",
+   "_kernels/blackwell/flash_attn/cute/paged_kv.py": "0e841ef63120af88afeaaa3920cc7815d33d936a3c8e5143ed68d3e68580e46a",
+   "_kernels/blackwell/flash_attn/cute/seqlen_info.py": "19f9354f5a3c61c98404e30fe5fa032e506f409e23661538b71027c67f80ed14",
+   "_kernels/blackwell/flash_attn/cute/softmax.py": "01025dfef7a4de0145d9472bc4beccb2e837600f0d670af6a9ea0115f7d8147c",
+   "_kernels/blackwell/flash_attn/cute/tile_scheduler.py": "6ae6b68d309bffdce137deaa10bbde006307bafc99963b0d918a78f19b6d5954",
+   "_kernels/blackwell/flash_attn/cute/utils.py": "50c42d27812ce4519f5ca5b1b25b3c07a0789312169777503dceeb316a1f7859",
+   "_kernels/blackwell/flash_attn/cute/v_layout.py": "4b3d3fd31b57dd08ee2b5703156da56763ac6519e1a5a5e38e714629e9950398",
+   "_kernels/blackwell/nvfp4.py": "8e4eb19819d845493422c3b1be5367b30bd002c3bc869de99e03b20fc3a1250e",
+   "_kernels/blackwell/v_smooth.py": "0bb16c19f3480e37f0643b6c20a50088cb010b0f9649c0763fd0ec1e22e56165",
+   "api.py": "69e9be82120725582b85453c6360fb8dbeefb45b291db7367ef669b638cb2f49",
+   "baselines.py": "47054af9ffdc18c35dd67b0a1ee6efab8cb42443073f67ecc6a657af5ddd085e",
+   "benchmarking/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "benchmarking/backends.py": "998c5b68d1edf77bfd5810d51436a2f562f1eddff37ea7e629b9c4c316063b20",
+   "benchmarking/measurement.py": "08b73bf55692d2a65db0a96c2c8e59ac3d974e8fe844c141cd1a1a73262a7553",
+   "benchmarking/report.py": "58fb8afd96b180fc8226e8dd29913f5adadad2f5e8f956bbce308842eec8c683",
+   "benchmarking/runner.py": "a79770ad186987c11c7fb4867038f4c2ea2393c6d766e680931d62b5d7408a73",
+   "cli/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "cli/bench.py": "55908d494271c41677eaa3487a0e0b81807c07ded6487c2b104860063ac0fad8",
+   "cli/check.py": "ed83ea2e0cb8f3f835b05775413ee9d7a5082bb98baaca7d26734447c0c1e595",
+   "cli/info.py": "c12a680f274610c07c98a6a11ce411a6e2ebdbae7d03531afb06a2da62684158",
+   "integrations/__init__.py": "1903d3a4d4d20b5264e6219c742ec06a623b690bf3f969f3d2b96ff15b1e2726",
+   "integrations/diffusion.py": "617ccc288b705d9ae83ac8d5b30fb0501ae09614bc9286c1c1739063de7a2d66",
+   "integrations/packed.py": "986d08b77fd653fcda88c9afcfe3e07c8d20d9881c4a8914b63ba45d489498bc",
+   "integrations/sglang.py": "a7083ea4c1330f40769860fee14fb0819ac3fc1e477ad762d64a9c0998071fdc",
+   "preparation.py": "ec0d8551967d87fdebbf496e0823a0e8cd1ddb4a84a284eb976109f702cbb73f",
+   "quantization.py": "689521f7af10e10ea976ffc38abf10478471a66ac9085c2dc4b96fe07e71b922",
+   "v_repair.py": "5d59aaf59e8930a28bb3c56420322d9ae9c8531cfb9f16d56fa399052c25aae4"
+  },
+  "source_revision": {
+   "commit": "359611421ae5600b5b84b32a14b1491a4a9a3a5e",
+   "dirty": false
+  }
+ },
+ "backends": {
+  "bf16": "Upstream FlashAttention-4 BF16 (flash-attn-4 4.0.0b33)",
+  "vc": "VC-Attention: ExpCast + V-Smooth, original scan, no Open-VC optimizations",
+  "open-vc": "Open-VC Attn: ExpCast with Open-VC optimizations"
+ },
+ "v_smooth": {
+  "implementation": "tuned kernel path (FP32 means, mean prefetch, tensor-core mean restoration), original key scan; fused two-pass Triton preparation with a reused grouping; k-means (64 groups, 4 iterations) with tensor-core centroid updates",
+  "grouping": "vc_complete_call_events_ms per row: VC complete calls with a fresh and with a reused grouping, interleaved, CUDA events, 5 samples each. Their median difference is the grouping cost; VC-Attention groups on the first quarter of denoising steps and reuses the grouping afterwards, so timed calls reuse it.",
+  "grouping_step_fraction": 0.25
+ },
+ "rows": [
+  {
+   "shape": [
+    73397,
+    7,
+    128
+   ],
+   "input_sha256": "c96ac27be3c07b2ac3d954b4abbc14ff091327b94f2332ed4153521600de4f1a",
+   "accuracy_vs_bf16": {
+    "vc": {
+     "relative_l2": 0.030945125967264175,
+     "rmse": 0.12903358042240143,
+     "max_abs": 5.6787109375
+    },
+    "open-vc": {
+     "relative_l2": 0.03194497525691986,
+     "rmse": 0.1332027167081833,
+     "max_abs": 5.5
+    }
+   },
+   "attention": {
+    "median_ms": {
+     "bf16": 14.177687835693359,
+     "vc": 8.560750198364257,
+     "open-vc": 6.983078384399414
+    },
+    "samples_ms": {
+     "bf16": [
+      14.218467712402344,
+      14.248553466796874,
+      14.214959716796875,
+      14.114419555664062,
+      14.224995422363282,
+      14.173008728027344,
+      14.06065673828125,
+      14.180146789550781,
+      14.113058471679688,
+      14.241587829589843,
+      14.175228881835938,
+      14.113180541992188
+     ],
+     "vc": [
+      8.619337463378907,
+      8.536985778808594,
+      8.551023864746094,
+      8.594319915771484,
+      8.57979507446289,
+      8.5200927734375,
+      8.54180450439453,
+      8.573030090332031,
+      8.591056060791015,
+      8.531561279296875,
+      8.570476531982422,
+      8.541474914550781
+     ],
+     "open-vc": [
+      7.023030090332031,
+      6.9717155456542965,
+      6.872480010986328,
+      6.943244934082031,
+      7.020649719238281,
+      7.000787353515625,
+      7.001200103759766,
+      6.9792930603027346,
+      6.977241516113281,
+      6.887427520751953,
+      6.993859100341797,
+      6.986863708496093
+     ]
+    },
+    "speedup_vs_bf16": {
+     "vc": 1.6561268004762428,
+     "open-vc": 2.0302919508059802
+    },
+    "median_paired_speedup_vs_bf16": {
+     "vc": 1.6540009108205616,
+     "open-vc": 2.026487928950947
+    },
+    "orders": [
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "vc",
+      "open-vc"
+     ],
+     [
+      "open-vc",
+      "bf16",
+      "vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "vc",
+      "bf16",
+      "open-vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ]
+    ]
+   },
+   "complete_call": {
+    "median_ms": {
+     "bf16": 14.149118041992189,
+     "vc": 8.751110458374022,
+     "open-vc": 7.111601638793945
+    },
+    "samples_ms": {
+     "bf16": [
+      14.26104278564453,
+      14.121878051757813,
+      14.145948791503907,
+      14.104025268554688,
+      14.144912719726562,
+      14.203701782226563,
+      14.176063537597656,
+      14.125141906738282,
+      14.0837890625,
+      14.188021850585937,
+      14.163987731933593,
+      14.15228729248047
+     ],
+     "vc": [
+      8.784681701660157,
+      8.773628997802735,
+      8.724073791503907,
+      8.752751922607422,
+      8.747417449951172,
+      8.733289337158203,
+      8.705436706542969,
+      8.739842987060547,
+      8.749468994140624,
+      8.799037170410156,
+      8.768099212646485,
+      8.753564453125
+     ],
+     "open-vc": [
+      7.090313720703125,
+      7.146294403076172,
+      7.06951675415039,
+      7.115164947509766,
+      7.11108169555664,
+      7.102067565917968,
+      7.133586883544922,
+      7.11212158203125,
+      7.060089874267578,
+      7.100220489501953,
+      7.11435546875,
+      7.113129425048828
+     ]
+    },
+    "speedup_vs_bf16": {
+     "vc": 1.6168368699372044,
+     "open-vc": 1.989582482349466
+    },
+    "median_paired_speedup_vs_bf16": {
+     "vc": 1.6164618243380104,
+     "open-vc": 1.9902515755792958
+    },
+    "orders": [
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "vc",
+      "open-vc"
+     ],
+     [
+      "open-vc",
+      "bf16",
+      "vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "vc",
+      "bf16",
+      "open-vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ]
+    ]
+   },
+   "vc_complete_call_events_ms": {
+    "fresh_grouping": {
+     "median_ms": 9.308095932006836,
+     "samples_ms": [
+      8.960607528686523,
+      8.983039855957031,
+      9.308095932006836,
+      9.460288047790527,
+      9.797951698303223
+     ]
+    },
+    "reused_grouping": {
+     "median_ms": 8.293408393859863,
+     "samples_ms": [
+      7.985536098480225,
+      8.030912399291992,
+      8.293408393859863,
+      8.653568267822266,
+      8.644543647766113
+     ]
+    }
+   }
+  },
+  {
+   "shape": [
+    73397,
+    14,
+    128
+   ],
+   "input_sha256": "22f74698db12fc367761ff250894f2d89b3d013d3aece1a6852c02e6b50a8427",
+   "accuracy_vs_bf16": {
+    "vc": {
+     "relative_l2": 0.02861674316227436,
+     "rmse": 0.13170532882213593,
+     "max_abs": 8.75
+    },
+    "open-vc": {
+     "relative_l2": 0.02988821640610695,
+     "rmse": 0.13755714893341064,
+     "max_abs": 10.25
+    }
+   },
+   "attention": {
+    "median_ms": {
+     "bf16": 28.61870422363281,
+     "vc": 17.1957275390625,
+     "open-vc": 14.159310913085939
+    },
+    "samples_ms": {
+     "bf16": [
+      28.656329345703124,
+      28.88294372558594,
+      28.606668090820314,
+      28.508160400390626,
+      28.622952270507813,
+      28.748312377929686,
+      28.49791564941406,
+      28.614456176757812,
+      28.625308227539062,
+      28.59253845214844,
+      28.736410522460936,
+      28.58824462890625
+     ],
+     "vc": [
+      17.13592071533203,
+      17.29145965576172,
+      17.233628845214845,
+      17.15116729736328,
+      17.15302429199219,
+      17.215090942382812,
+      17.273849487304688,
+      17.133255004882812,
+      17.176364135742187,
+      17.260354614257814,
+      17.254191589355468,
+      17.158976745605468
+     ],
+     "open-vc": [
+      14.177171325683593,
+      14.138560485839843,
+      14.129472351074218,
+      14.177095031738281,
+      14.162435913085938,
+      14.07867889404297,
+      14.051017761230469,
+      14.1955078125,
+      14.211068725585937,
+      14.1845947265625,
+      14.156185913085938,
+      14.138473510742188
+     ]
+    },
+    "speedup_vs_bf16": {
+     "vc": 1.664291560715964,
+     "open-vc": 2.0211932910650052
+    },
+    "median_paired_speedup_vs_bf16": {
+     "vc": 1.666316608215209,
+     "open-vc": 2.0216593397618015
+    },
+    "orders": [
+     [
+      "bf16",
+      "vc",
+      "open-vc"
+     ],
+     [
+      "open-vc",
+      "bf16",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "vc",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "bf16",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "open-vc",
+      "bf16",
+      "vc"
+     ],
+     [
+      "bf16",
+      "vc",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ]
+    ]
+   },
+   "complete_call": {
+    "median_ms": {
+     "bf16": 28.660125732421875,
+     "vc": 17.541838073730467,
+     "open-vc": 14.333376312255858
+    },
+    "samples_ms": {
+     "bf16": [
+      28.758477783203126,
+      28.698117065429688,
+      28.441390991210938,
+      28.71593017578125,
+      28.60698547363281,
+      28.712142944335938,
+      28.577902221679686,
+      28.690338134765625,
+      28.57901611328125,
+      28.634014892578126,
+      28.686236572265624,
+      28.532125854492186
+     ],
+     "vc": [
+      17.572966003417967,
+      17.469319152832032,
+      17.5110107421875,
+      17.5446044921875,
+      17.569180297851563,
+      17.5614013671875,
+      17.488694763183595,
+      17.58289337158203,
+      17.561190795898437,
+      17.53907165527344,
+      17.49995574951172,
+      17.45623016357422
+     ],
+     "open-vc": [
+      14.31961669921875,
+      14.320028686523438,
+      14.298109436035157,
+      14.382080078125,
+      14.358528137207031,
+      14.296470642089844,
+      14.375526428222656,
+      14.326380920410156,
+      14.259817504882813,
+      14.36651153564453,
+      14.340371704101562,
+      14.368150329589843
+     ]
+    },
+    "speedup_vs_bf16": {
+     "vc": 1.6338154309690867,
+     "open-vc": 1.9995376600777464
+    },
+    "median_paired_speedup_vs_bf16": {
+     "vc": 1.6342869518033534,
+     "open-vc": 1.9985147892538762
+    },
+    "orders": [
+     [
+      "bf16",
+      "vc",
+      "open-vc"
+     ],
+     [
+      "open-vc",
+      "bf16",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "vc",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "bf16",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "open-vc",
+      "bf16",
+      "vc"
+     ],
+     [
+      "bf16",
+      "vc",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ]
+    ]
+   },
+   "vc_complete_call_events_ms": {
+    "fresh_grouping": {
+     "median_ms": 19.09644889831543,
+     "samples_ms": [
+      17.443744659423828,
+      18.198976516723633,
+      19.205472946166992,
+      19.09644889831543,
+      19.3240966796875
+     ]
+    },
+    "reused_grouping": {
+     "median_ms": 17.259199142456055,
+     "samples_ms": [
+      15.761152267456055,
+      17.351200103759766,
+      17.259199142456055,
+      17.179712295532227,
+      17.292160034179688
+     ]
+    }
+   }
+  },
+  {
+   "shape": [
+    73397,
+    56,
+    128
+   ],
+   "input_sha256": "2f80d8ee35845984f218dc05b2a344e0dc2b1357f0f8ad3e34219ddd3c0e6b12",
+   "accuracy_vs_bf16": {
+    "vc": {
+     "relative_l2": 0.02869686298072338,
+     "rmse": 0.13417069613933563,
+     "max_abs": 11.0
+    },
+    "open-vc": {
+     "relative_l2": 0.02980218641459942,
+     "rmse": 0.13933858275413513,
+     "max_abs": 12.125
+    }
+   },
+   "attention": {
+    "median_ms": {
+     "bf16": 114.35494384765624,
+     "vc": 70.16043395996093,
+     "open-vc": 57.25609436035157
+    },
+    "samples_ms": {
+     "bf16": [
+      114.093359375,
+      114.182763671875,
+      114.27645263671874,
+      114.1726318359375,
+      114.22117919921875,
+      114.16412353515625,
+      114.8106689453125,
+      114.43343505859374,
+      114.76778564453124,
+      114.81510009765626,
+      114.63709716796875,
+      114.54320068359375
+     ],
+     "vc": [
+      69.95025024414062,
+      70.0274658203125,
+      69.99982299804688,
+      70.19857788085938,
+      70.09464721679687,
+      69.9802490234375,
+      70.130078125,
+      70.19078979492187,
+      70.386279296875,
+      70.34317016601562,
+      70.25347290039062,
+      70.28049926757812
+     ],
+     "open-vc": [
+      57.22428588867187,
+      57.194085693359376,
+      57.3023193359375,
+      57.02369384765625,
+      57.2305419921875,
+      57.264337158203126,
+      57.4441650390625,
+      57.347991943359375,
+      57.2478515625,
+      57.354339599609375,
+      57.471282958984375,
+      57.238427734375
+     ]
+    },
+    "speedup_vs_bf16": {
+     "vc": 1.6299064500216203,
+     "open-vc": 1.997253657015841
+    },
+    "median_paired_speedup_vs_bf16": {
+     "vc": 1.630803456506797,
+     "open-vc": 1.9961083416808243
+    },
+    "orders": [
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "vc",
+      "bf16",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "bf16",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "open-vc",
+      "bf16",
+      "vc"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ]
+    ]
+   },
+   "complete_call": {
+    "median_ms": {
+     "bf16": 114.4642578125,
+     "vc": 71.66709594726562,
+     "open-vc": 58.11539916992187
+    },
+    "samples_ms": {
+     "bf16": [
+      114.38724365234376,
+      114.39586181640625,
+      114.07686767578124,
+      114.408544921875,
+      114.46456298828124,
+      114.46395263671874,
+      115.03533935546875,
+      114.37435302734374,
+      114.64417724609375,
+      114.7315185546875,
+      115.02838134765625,
+      114.5511962890625
+     ],
+     "vc": [
+      71.43975830078125,
+      71.54739379882812,
+      71.56464233398438,
+      71.52567749023437,
+      71.625830078125,
+      71.81127319335937,
+      71.65029907226562,
+      71.77748413085938,
+      71.76029663085937,
+      71.68389282226562,
+      72.00379028320313,
+      71.85164184570313
+     ],
+     "open-vc": [
+      57.94344482421875,
+      58.02516479492188,
+      58.03642578125,
+      58.14046630859375,
+      58.09135131835937,
+      58.13944702148437,
+      58.372308349609376,
+      58.048516845703126,
+      58.07811279296875,
+      58.22013549804687,
+      58.3587890625,
+      58.533392333984374
+     ]
+    },
+    "speedup_vs_bf16": {
+     "vc": 1.5971661234428356,
+     "open-vc": 1.9696028840449222
+    },
+    "median_paired_speedup_vs_bf16": {
+     "vc": 1.5978447744074977,
+     "open-vc": 1.970536816450604
+    },
+    "orders": [
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "vc",
+      "bf16",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "bf16",
+      "open-vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "open-vc",
+      "bf16",
+      "vc"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ],
+     [
+      "bf16",
+      "open-vc",
+      "vc"
+     ],
+     [
+      "vc",
+      "open-vc",
+      "bf16"
+     ],
+     [
+      "open-vc",
+      "vc",
+      "bf16"
+     ]
+    ]
+   },
+   "vc_complete_call_events_ms": {
+    "fresh_grouping": {
+     "median_ms": 76.0726089477539,
+     "samples_ms": [
+      74.27184295654297,
+      73.85798645019531,
+      77.32466888427734,
+      77.74140930175781,
+      76.0726089477539
+     ]
+    },
+    "reused_grouping": {
+     "median_ms": 71.36489868164062,
+     "samples_ms": [
+      69.82556915283203,
+      70.12150573730469,
+      71.36489868164062,
+      71.44188690185547,
+      71.39360046386719
+     ]
+    }
+   }
+  }
+ ]
+}

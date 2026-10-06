@@ -3,8 +3,8 @@
 # Extras belong in pyproject.toml requirements; pip constraints cannot contain extras.
 torch==2.11.0
 triton==3.6.0
-nvidia-cutlass-dsl==4.6.0
-quack-kernels==0.6.1
+nvidia-cutlass-dsl==4.6.2
+quack-kernels==0.6.4
+flash-attn-4==4.0.0b33
 cuda-python==13.0.3
-flash-attn-4==4.0.0b21
 einops==0.8.1

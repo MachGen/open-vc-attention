@@ -3,11 +3,11 @@
   "files": {
     "python/sglang/multimodal_gen/runtime/platforms/interface.py": {
       "original_sha256": "5d0d3094a26cd09cbff6b14fa88e4357c92f70df6e6458e651b1eaa07da54918",
-      "patched_sha256": "663bb2634463d6b2f458e30c590777a8d817e5d25919097c1f72c50525aed6f7"
+      "patched_sha256": "928d0bf4af2c3a5d1fe32db6c4adc4d068c5c2d312badcffbd67b7f590a2e281"
     },
     "python/sglang/multimodal_gen/runtime/platforms/cuda.py": {
       "original_sha256": "c0a99f13fe1d54e1c9d85cc90ea32c09dbd1ca27451159e0c64953881dd82e9f",
-      "patched_sha256": "e75c8a7364c0c7e2cbf27137bc4dd84c83fee5cef844c6117e8b55ac9e6aa93f"
+      "patched_sha256": "06cc8841a80a475aad21ff8bb3090a8e77173f9daf80e44c985b6bf667ebb125"
     }
   }
 }

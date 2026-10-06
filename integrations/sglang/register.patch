@@ -4,7 +4,7 @@
      SUBBLOCK_SPARSE_ATTN = enum.auto()
      CUBE_SPARSE_ATTN = enum.auto()
      FP8_FA_SM120 = enum.auto()
-+    VC_ATTN = enum.auto()
++    OPEN_VC_ATTN = enum.auto()
      NO_ATTENTION = enum.auto()
  
      def __str__(self):
@@ -14,12 +14,12 @@
          head_size: int,
          dtype: torch.dtype,
      ) -> str:
-+        if selected_backend is AttentionBackendEnum.VC_ATTN:
++        if selected_backend is AttentionBackendEnum.OPEN_VC_ATTN:
 +            if cls.get_device_capability() not in ((10, 0), (10, 3)):
-+                raise ValueError("VC Attention requires SM100/SM103")
++                raise ValueError("Open-VC Attn requires SM100/SM103")
 +            if head_size != 128 or dtype not in (torch.bfloat16, torch.float16):
-+                raise ValueError("VC Attention requires FP16/BF16 with head size 128")
-+            return "vc_attn.integrations.sglang.VCAttentionBackend"
++                raise ValueError("Open-VC Attn requires FP16/BF16 with head size 128")
++            return "open_vc_attn.integrations.sglang.OpenVCAttentionBackend"
          if selected_backend is None:
              target_backend = cls._resolve_default_attn_backend()
              if target_backend == AttentionBackendEnum.FA and cls.is_blackwell():

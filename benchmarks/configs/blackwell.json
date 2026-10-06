@@ -1,0 +1,26 @@
+{
+  "backends": [
+    "bf16",
+    "vc",
+    "open-vc"
+  ],
+  "baseline": "bf16",
+  "shapes": [
+    "32768x7x128",
+    "73426x7x128",
+    "73426x56x128",
+    "188214x7x128",
+    "188214x56x128",
+    "262144x7x128",
+    "262144x56x128"
+  ],
+  "rounds": 12,
+  "scopes": [
+    "attention",
+    "quantize-attention"
+  ],
+  "timing": [
+    "events",
+    "graph"
+  ]
+}

@@ -15,3 +15,7 @@ results/
 *.safetensors
 *.mp4
 .env*
+
+!benchmarks/results/
+!benchmarks/results/**
+

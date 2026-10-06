@@ -1,0 +1,32 @@
+% One iteration of the Open-VC main loop (Figure: pipeline).
+\begin{tikzpicture}[x=1cm,y=1cm,
+  font=\sffamily\scriptsize,
+  box/.style={draw=#1, fill=#1!10, rounded corners=2pt, align=center, inner sep=3pt,
+              minimum height=0.95cm, text width=2.45cm, line width=0.6pt},
+  arr/.style={-{Latex[length=1.8mm,width=1.4mm]}, line width=0.6pt, color=mgmuted},
+  lab/.style={font=\sffamily\tiny, text=mgmuted, inner sep=1.5pt}]
+  \foreach \y/\t in {0/{Load (TMA)}, -1.6/{Tensor-core MMA}, -3.2/{Softmax warps}, -4.8/{Correction\\ {\mdseries(warps or inline)}}} {
+    \fill[cgraylt] (0,\y-0.66) rectangle (16.4,\y+0.66);
+    \node[anchor=west, font=\sffamily\scriptsize\bfseries, text=mgmuted, text width=1.9cm, align=left] at (0.12,\y) {\t};
+  }
+  \node[box=mglight] (L) at (3.5,0) {Load key tile $j$:\\ $K_{8,j}$, $V_{8,j}$ (E4M3)\\ and $s_{K,j}$};
+  \node[box=cblue] (M1) at (6.25,-1.6) {QK MMA (FP8)\\ $S_j=Q_8K_{8,j}^{\top}$ in FP32};
+  \node[box=corange] (S1) at (8.3,-3.2) {Scale and row max\\ $x=\tau\, s_Q\, s_{K,j}\, S_j$\\ $m'=\max(m,\max x)$};
+  \node[box=corange, text width=2.75cm] (S2) at (11.6,-3.2) {ExpCast and pack\\ $c=\lfloor a(x-m')+119.65\rceil$\\ saturate, pack $\to P_j$\\ $\ell \mathrel{+}= \sum \operatorname{dec}(P_j)$};
+  \node[box=corange] (C) at (11.6,-4.8) {if $m'>m$:\\ $A\leftarrow\alpha A,\ \ \ell\leftarrow\alpha\ell$};
+  \node[box=cblue] (M2) at (14.9,-1.6) {PV MMA (FP8)\\ $A \mathrel{+}= P_j\, V_{8,j}$};
+  \draw[arr] ($(L.east)+(0,0.2)$) -| node[lab, pos=0.25, above] {$V_{8,j}$} (M2.north);
+  \draw[arr] ($(L.east)+(0,-0.2)$) -| node[lab, pos=0.25, below] {$K_{8,j}$} (M1.north);
+  \draw[arr] (M1.south) |- node[lab, pos=0.25, left] {$S_j$} (S1.west);
+  \draw[arr] (S1.east) -- node[lab, above] {$x,\,m'$} (S2.west);
+  \draw[arr] (S1.south) |- node[lab, pos=0.75, below] {$\alpha=e^{\,m-m'}$} (C.west);
+  \draw[arr] (S2.north) |- node[lab, pos=0.75, above] {$P_j$ (E4M3)} (M2.west);
+  \draw[arr] (C.east) -| node[lab, pos=0.75, right] {rescaled $A$} ($(M2.south)+(-0.55,0)$);
+  \node[font=\sffamily\tiny\itshape, text=mgmuted, text width=3.2cm, align=left] at (9.55,-1.6)
+     {B200 path: the load of $s_{K,j}$ is issued so that it overlaps the wait for $S_j$.};
+  \node[box=mgteal, text width=6.3cm, minimum height=0.62cm] at (13.05,-6.0)
+     {After the last key tile:\enspace $O=s_V\,A/\ell$, cast to BF16};
+  \node[font=\sffamily\tiny, text=mgmuted, text width=8.4cm, align=left, anchor=west] at (0.1,-6.0)
+     {Two query tiles per CTA alternate, so one tile's softmax overlaps the other tile's MMAs.
+      The loop visits key tiles in mid-window order (\cref{sec:traversal}).};
+\end{tikzpicture}
