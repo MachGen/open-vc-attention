@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "open-vc-attn"
 version = "0.3.0"
-description = "Open-VC Attn: FP8 ExpCast attention for NVIDIA Blackwell GPUs"
+description = "Open-VC Attention: FP8 ExpCast attention for NVIDIA Blackwell GPUs"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "BSD-3-Clause"

@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "Please cite the software revision and the upstream FlashAttention papers."
-title: "Open-VC Attn: FP8 attention with softmax casting for long-sequence video diffusion on NVIDIA Blackwell"
+title: "Open-VC Attention: FP8 attention with softmax casting for long-sequence video diffusion on NVIDIA Blackwell"
 type: software
 version: 0.3.0
 license: BSD-3-Clause

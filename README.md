@@ -1,4 +1,4 @@
-# Open VC Attention
+# Open-VC Attention
 
 FP8 forward attention for NVIDIA Blackwell (B200 / B300), built on the FlashAttention-4 CuTe DSL kernel. Open-VC implements ExpCast from [VC-Attention](https://arxiv.org/abs/2609.15810), which writes FP8 softmax probabilities directly from scores without an exponential. It adds its own optimizations around ExpCast:
 

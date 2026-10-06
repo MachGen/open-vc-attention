@@ -2,7 +2,7 @@
 
 ## 0.3.0
 
-First public release of Open-VC Attn.
+First public release of Open-VC Attention.
 
 - FP8 forward attention for Blackwell SM100/SM103 with ExpCast, scales folded into score conversion, and a softmax denominator built from decoded probabilities.
 - Mid-window key traversal, warp-specialized pipeline with packed V, and fused three-kernel B200 input preparation.

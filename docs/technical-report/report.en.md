@@ -1,12 +1,12 @@
-# Open-VC Attn: FP8 attention with softmax casting for long-sequence video diffusion on NVIDIA Blackwell
+# Open-VC Attention: FP8 attention with softmax casting for long-sequence video diffusion on NVIDIA Blackwell
 
-**MachGen AI** · Technical report · Revision 0.3 · October 2026
+**MachGen AI** · Technical report · Revision 1.0 · October 2026
 
 Code: <https://github.com/MachGen/open-vc-attention> · Package: `open-vc-attn` · License: BSD-3-Clause
 
 ## Abstract
 
-Attention dominates the cost of long-sequence video diffusion transformers. Moving from BF16 to FP8 doubles tensor-core throughput on NVIDIA Blackwell, but exponential throughput does not change with precision. On B200, a straightforward FP8 attention kernel is therefore limited by softmax rather than by matrix multiplication. Open-VC Attn is an open-source FP8 forward-attention kernel for B200 (SM100) and B300 (SM103), built on the FlashAttention-4 CuTe DSL kernel. It quantizes $Q$ and $K$ per 128-token block and $V$ per head, folds the scales into score conversion, and replaces the exponential and the FP32-to-FP8 conversion with *ExpCast*, an affine map from scores to E4M3 probability codes introduced by VC-Attention. Because ExpCast leaves no headroom above the running maximum, we pair it with a mid-window key traversal that establishes the maximum early, and we add a fused three-kernel input preparation path. A budgeted $V$ residual repair re-adds the quantization residual of the worst-rounded value tokens, giving a tunable accuracy–time trade-off. On B200, with $Q$, $K$ and $V$ captured from a MiniMax-H3 video model (73,397 tokens, 7 to 56 heads), Open-VC's attention kernel sustains 2.70–2.76 PFLOP/s and is 2.00–2.03× faster than upstream BF16 FlashAttention-4 (release 4.0.0b33) measured in the same harness, and 1.97–2.00× faster including all FP8 input preparation, with 2.98–3.19% relative $L_2$ error. VC-Attention's method (ExpCast with value smoothing) on the same kernel family, without our optimizations, reaches 1.63–1.66×, so Open-VC's scheduling and data layout add a further 1.21–1.23×. On these inputs upstream BF16 runs 15–16% below FlashAttention-4's published B200 figure, so we also report throughput against that figure (1.68–1.72×). A 0.5% repair budget lowers relative $L_2$ error by 1.90% for 1.55% more time. We characterize ExpCast's error and underflow behavior and explain why we omit VC-Attention's value smoothing at FP8.
+Attention dominates the cost of long-sequence video diffusion transformers. On NVIDIA Blackwell, FP8 doubles tensor-core throughput but not exponential throughput, so a straightforward FP8 attention kernel is limited by the softmax rather than by matrix multiplication. Open-VC Attention is an open-source FP8 forward-attention kernel for B200 and B300, built on the FlashAttention-4 CuTe DSL kernel. It adopts *ExpCast* from VC-Attention, which writes E4M3 probability codes directly from scores without an exponential, and schedules the kernel around it: scales folded into score conversion, a mid-window key traversal that settles the running maximum early, a packed-$V$ pipeline and fused input preparation. A budgeted $V$ residual repair gives a tunable accuracy–time trade-off. On B200, with activations captured from a MiniMax-H3 video model, the attention kernel sustains 2.70–2.76 PFLOP/s: 2.00–2.03× faster than upstream BF16 FlashAttention-4 (1.97–2.00× including FP8 preparation) and 1.21–1.23× faster than the VC-Attention method on the same kernel family, at 2.98–3.19% relative $L_2$ error. A 0.5% repair budget lowers that error by 1.90% for 1.55% more time.
 
 ## 1 Introduction
 
@@ -14,9 +14,9 @@ Video diffusion transformers [1] such as Wan [2], LongCat-Video, HunyuanVideo-1.
 
 On B200, dense FP8 tensor-core throughput (4.5 PFLOP/s) is twice the BF16 rate [4], but the multi-function unit (MUFU) that evaluates exponentials did not scale with it: about $4.9\times10^{12}$ `exp2`/s on GB200 [5]. At $D=128$ each score carries 512 FLOPs of matrix work, so a kernel that sends every exponential through MUFU is capped near 2.53 PFLOP/s, 56% of the FP8 peak (Section 2.3).
 
-VC-Attention [3] removes that bottleneck with *ExpCast-FP8*: because a floating-point bit pattern is approximately affine in its logarithm [6, 7], an E4M3 probability code can be computed from a score with one fused multiply-add, skipping both the exponential and the FP32-to-FP8 conversion. Its production kernel, which pairs ExpCast with the *V-Smooth* value-grouping scheme, is proprietary [8].
+VC-Attention [3] removes that bottleneck with *ExpCast-FP8*: because a floating-point bit pattern is approximately affine in its logarithm [6, 7], an E4M3 probability code can be computed from a score with one fused multiply-add, skipping both the exponential and the FP32-to-FP8 conversion. The paper pairs ExpCast with the *V-Smooth* value-grouping scheme; Nunchux AI reports a proprietary kernel built on these ideas [8].
 
-This report describes **Open-VC Attn**, an independent, open-source (BSD-3-Clause) FP8 attention kernel for Blackwell that implements ExpCast inside the FlashAttention-4 CuTe DSL kernel [4, 9]. Our contributions are:
+This report describes **Open-VC Attention**, our open-source (BSD-3-Clause) FP8 attention kernel for Blackwell, inspired by VC-Attention, that implements ExpCast inside the FlashAttention-4 CuTe DSL kernel [4, 9]. Our contributions are:
 
 - **An FP8 forward kernel for SM100 and SM103 with a documented numerical contract**: per-block $Q/K$ and per-head $V$ scales folded into score conversion, ExpCast probabilities, and a softmax denominator built from the same decoded probabilities that feed the $PV$ product (Sections 4.1 and 4.2).
 - **Scheduling and data layout around ExpCast**: a mid-window key traversal that establishes the running maximum early, as ExpCast's zero rescale deadband requires (Section 4.3); a warp-specialized pipeline with a B200 scale/score overlap (Section 4.4); a packed $V$ layout (Section 4.5); and a fused three-kernel input preparation (Section 4.6).
@@ -241,7 +241,7 @@ A key tile's descale $s_{K,j}$ never changes once loaded, so the B200 schedule i
 
 ### 4.5 Packed $V$ layout for the FP8 PV product
 
-The PV product reduces over keys. For eligible calls Open-VC stores $V$ in a transposed, padded layout $[H,128,S_{\text{padded}}]$, in which the key dimension (the reduction dimension) is contiguous. This matches the operand layout of its FP8 PV path; the logical $[S,H,128]$ view has sequence stride one. Outputs of the generic `prepare_fp8` stay unpacked, because a prepared object may later be passed to the reference, causal or LSE paths. For those inputs `attention_fp8` packs $V$ internally, and that cost is included in "attention scope" timings. The fused preparation (Section 4.6) writes the packed layout directly and avoids the second packing launch.
+The PV product reduces over keys. For eligible calls Open-VC stores $V$ in a transposed, padded layout $[H,128,S_{\text{padded}}]$, in which the key dimension (the reduction dimension) is contiguous. This matches the operand layout of its FP8 PV path; the logical $[S,H,128]$ view has sequence stride one. Outputs of the generic `prepare_fp8` stay unpacked, because a prepared object may later be passed to the reference, causal or LSE paths. For those inputs `attention_fp8` packs $V$ on every call; the benchmark packs $V$ before timing, so attention-scope numbers always measure a single attention kernel. The fused preparation (Section 4.6) writes the packed layout directly and avoids the second packing launch.
 
 ### 4.6 Fused input preparation
 
@@ -348,7 +348,7 @@ Repair is enabled per call through `prepare_v_repair(q, k, v, budget=ρ)` follow
 We compare three implementations of the same attention operator, all timed by the release's benchmark (`open-vc-attn-bench`, Appendix A) on the same inputs:
 
 - **BF16** (`bf16`): upstream FlashAttention-4's CuTe DSL forward kernel, the unmodified `flash-attn-4` 4.0.0b33 release, called in the same process.
-- **VC** (`vc`): VC-Attention's method [3] on the same Blackwell kernel family, without Open-VC's optimizations: ExpCast probabilities, V-Smooth and the original key scan. V-Smooth groups value tokens with online $k$-means (64 groups, 4 iterations), permutes $K$ and $V$ by group, demeans $V$ per 128-token block and restores the means in the kernel. Our implementation is efficient: the means are restored with tensor-core products on the kernel's tuned path, preparation with an existing grouping is a fused two-pass GPU kernel, and $k$-means centroid updates use tensor-core one-hot products. It is our implementation of the published method, not the authors' production kernel.
+- **VC** (`vc`): VC-Attention's method [3] on the same Blackwell kernel family, without Open-VC's optimizations: ExpCast probabilities, V-Smooth and the original key scan. V-Smooth groups value tokens with online $k$-means (64 groups, 4 iterations), permutes $K$ and $V$ by group, demeans $V$ per 128-token block and restores the means in the kernel. Our implementation is efficient: the means are restored with tensor-core products on the kernel's tuned path, preparation with an existing grouping is a fused two-pass GPU kernel, and $k$-means centroid updates use tensor-core one-hot products. It is our implementation of the published method.
 - **Open-VC** (`open-vc`): the defaults described in Section 4: ExpCast with folded scales, mid-window traversal, the warp-specialized pipeline with packed $V$ and fused input preparation.
 
 #### Inputs.
@@ -410,7 +410,7 @@ A speedup is only as meaningful as its baseline. Upstream FA4 BF16 reaches 1.35�
 | 14 | 2.862% | 0.1317 | 8.75 | 2.989% | 0.1376 | 10.25 |
 | 56 | 2.870% | 0.1342 | 11.00 | 2.980% | 0.1393 | 12.12 |
 
-Table 10 gives the error of both FP8 implementations against the BF16 output. Open-VC's relative $L_2$ error is 2.98–3.19%; VC's is 2.86–3.09%, 3.1–4.3% lower in relative terms, below the 7.3–11.1% bound estimated in Section 4.8 for V-Smooth's effect. A 0.5% $V$ residual repair budget recovers about half of that gap on Open-VC (Section 5.5) without grouping or permuting the keys. For the probability encoding alone, Table 3 gives the per-element picture: ExpCast's RMS error is 3.30% against 2.65% for exponentiate-then-round. These numbers characterize single attention calls; this report makes no claim about generated-video quality.
+Table 10 gives the error of both FP8 implementations against the BF16 output. Open-VC's relative $L_2$ error is 2.98–3.19%; VC's is 2.86–3.09%, 3.1–4.3% lower in relative terms, below the 7.3–11.1% bound estimated in Section 4.8 for V-Smooth's effect. A 0.5% $V$ residual repair budget recovers about half of that gap on Open-VC (Section 5.5) without grouping or permuting the keys. For the probability encoding alone, Table 3 gives the per-element picture: ExpCast's RMS error is 3.30% against 2.65% for exponentiate-then-round. These numbers characterize single attention calls; Section 5.5 shows one qualitative generated-video example, but this report makes no general claim about generated-video quality.
 
 ### 5.5 $V$ residual repair
 
@@ -433,9 +433,17 @@ The shape of the curve says where $V$'s error lives. The first 0.5% of tokens, t
 
 **Figure 5.** Cost and benefit of $V$ residual repair (labels are budgets). Most of the error reduction comes from the first 0.5% of tokens; larger budgets trade more time for smaller additional gains.
 
+#### A qualitative example.
+
+Figure 6 shows the same frame from two MiniMax-H3 generations with the same prompt and seed, one with Open-VC and no repair and one with a 0.5% repair budget. Without repair, the face behind the visor collapses into a dark hollow; with repair it renders correctly. This is a single example, not a measurement.
+
+![Figure 6](figures/astronaut_repair.jpg)
+
+**Figure 6.** Visor close-up about 6 s into a MiniMax-H3 generation, same prompt and seed. Left: Open-VC without repair. Right: Open-VC with a 0.5% $V$ repair budget.
+
 ## 6 Conclusion
 
-On B200, FP8 attention is limited by the exponential, not by the tensor cores. Open-VC Attn removes the exponential and the FP32-to-FP8 conversion from the probability path with ExpCast, keeps the numerics consistent by folding scales into score conversion and normalizing with the same decoded probabilities that the $PV$ product uses, and schedules around ExpCast's zero-deadband requirement with a mid-window traversal, a packed-$V$ pipeline and fused input preparation. On captured video-model activations its attention kernel sustains 2.70–2.76 PFLOP/s on B200, 2.00–2.03× upstream FA4 BF16 in the same harness (1.97–2.00× including preparation), against 1.63–1.66× for VC-Attention's method on the same kernel family; as an external reference point, Open-VC's throughput is 1.68–1.72× FA4's published BF16 figure. $V$ residual repair adds a tunable accuracy control on top: a 0.5% budget lowers relative $L_2$ error by 1.90% for 1.55% more time. We omit V-Smooth because at FP8 its benefit is bounded by the energy it removes, while its costs land on the bottleneck.
+On B200, FP8 attention is limited by the exponential, not by the tensor cores. Open-VC Attention removes the exponential and the FP32-to-FP8 conversion from the probability path with ExpCast, keeps the numerics consistent by folding scales into score conversion and normalizing with the same decoded probabilities that the $PV$ product uses, and schedules around ExpCast's zero-deadband requirement with a mid-window traversal, a packed-$V$ pipeline and fused input preparation. On captured video-model activations its attention kernel sustains 2.70–2.76 PFLOP/s on B200, 2.00–2.03× upstream FA4 BF16 in the same harness (1.97–2.00× including preparation), against 1.63–1.66× for VC-Attention's method on the same kernel family; as an external reference point, Open-VC's throughput is 1.68–1.72× FA4's published BF16 figure. $V$ residual repair adds a tunable accuracy control on top: a 0.5% budget lowers relative $L_2$ error by 1.90% for 1.55% more time. We omit V-Smooth because at FP8 its benefit is bounded by the energy it removes, while its costs land on the bottleneck.
 
 #### Availability and attribution.
 
@@ -510,10 +518,10 @@ Tokens are drawn from 64 Gaussian clusters plus unit Gaussian noise, with the cl
 2. Team Wan et al. *Wan: Open and Advanced Large-Scale Video Generative Models*. arXiv preprint arXiv:2503.20314. 2025.
 3. Xingyang Li et al. *VC-Attention: Value Smoothing and Softmax Casting for Low-bit Attention*. arXiv preprint arXiv:2609.15810. 2026.
 4. Ted Zadouri et al. *FlashAttention-4: Algorithm and Kernel Pipelining Co-Design for Asymmetric Hardware Scaling*. arXiv preprint arXiv:2603.05451. 2026. Also in Proceedings of MLSys 2026.
-5. Jamie Li et al. *Making Softmax More Efficient with NVIDIA Blackwell Ultra*. NVIDIA Technical Blog, <https://developer.nvidia.com/blog/making-softmax-more-efficient-with-nvidia-blackwell-ultra/>. 2026. 25 February 2026.
+5. Jamie Li et al. *Making Softmax More Efficient with NVIDIA Blackwell Ultra*. NVIDIA Technical Blog, <https://developer.nvidia.com/blog/making-softmax-more-efficient-with-nvidia-blackwell-ultra/>. February 2026.
 6. John N. Mitchell. *Computer Multiplication and Division Using Binary Logarithms*. IRE Transactions on Electronic Computers. 1962.
 7. Nicol N. Schraudolph. *A Fast, Compact Approximation of the Exponential Function*. Neural Computation. 1999.
-8. Nunchux AI. *VC-Attention: Faster Low-Bit Attention Without Retraining*. <https://www.nunchux.ai/blog/attention-is-the-video-bottleneck>. 2026. Blog post, 16 September 2026.
+8. Nunchux AI. *VC-Attention: Faster Low-Bit Attention Without Retraining*. Blog post, <https://www.nunchux.ai/blog/attention-is-the-video-bottleneck>. September 2026.
 9. NVIDIA. *CUTLASS and the CuTe DSL*. <https://github.com/NVIDIA/cutlass>. 2026.
 10. Ashish Vaswani et al. *Attention Is All You Need*. Advances in Neural Information Processing Systems (NeurIPS). 2017.
 11. Tri Dao et al. *FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness*. Advances in Neural Information Processing Systems (NeurIPS). 2022. arXiv:2205.14135.
@@ -528,8 +536,8 @@ Tokens are drawn from 64 Gaussian clusters plus unit Gaussian noise, with the cl
 20. Jintao Zhang et al. *SageAttention2: Efficient Attention with Thorough Outlier Smoothing and Per-thread INT4 Quantization*. International Conference on Machine Learning (ICML). 2025. arXiv:2411.10958.
 21. Jintao Zhang et al. *SageAttention3: Microscaling FP4 Attention for Inference and An Exploration of 8-Bit Training*. Advances in Neural Information Processing Systems (NeurIPS). 2025. arXiv:2505.11594.
 22. Bita Darvish Rouhani et al. *Microscaling Data Formats for Deep Learning*. arXiv preprint arXiv:2310.10537. 2023.
-23. Devashish Shankar et al. *Low Precision Flash Attention 4: End-to-End Block-Scaled Attention for Blackwell*. PyTorch Blog, <https://pytorch.org/blog/low-precision-flash-attention-4-end-to-end-block-scaled-attention-for-blackwell/>. 2026. 16 September 2026.
+23. Devashish Shankar et al. *Low Precision Flash Attention 4: End-to-End Block-Scaled Attention for Blackwell*. PyTorch Blog, <https://pytorch.org/blog/low-precision-flash-attention-4-end-to-end-block-scaled-attention-for-blackwell/>. September 2026.
 24. Haocheng Xi et al. *Sparse VideoGen: Accelerating Video Diffusion Transformers with Spatial-Temporal Sparsity*. International Conference on Machine Learning (ICML). 2025. arXiv:2502.01776.
 25. Jintao Zhang et al. *SpargeAttention: Accurate and Training-free Sparse Attention Accelerating Any Model Inference*. International Conference on Machine Learning (ICML). 2025. arXiv:2502.18137.
 26. Lianmin Zheng et al. *SGLang: Efficient Execution of Structured Language Model Programs*. Advances in Neural Information Processing Systems (NeurIPS). 2024.
-27. MachGen AI. *Open-VC Attn source repository (package \textttopen-vc-attn)*. <https://github.com/MachGen/open-vc-attention>. 2026.
+27. MachGen AI. *Open-VC Attention source repository (package `open-vc-attn`)*. <https://github.com/MachGen/open-vc-attention>. 2026.

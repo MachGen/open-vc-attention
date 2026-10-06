@@ -8,7 +8,7 @@ This page compares three implementations of the same attention operator on B200:
 | `vc` | VC-Attention's method on the same kernel family: ExpCast + V-Smooth, original key scan, none of Open-VC's optimizations |
 | `open-vc` | Open-VC defaults: ExpCast, mid-window traversal, packed V, fused preparation |
 
-`vc` is our implementation of the published VC-Attention method, not the authors' production kernel. V-Smooth (k-means value grouping, K/V permutation, per-block V demeaning restored in the kernel) runs on the kernel's tuned path with fused GPU preparation. Raw records with every sample and execution order: [`comparison.json`](../benchmarks/results/b200/comparison.json) and [`repair.json`](../benchmarks/results/b200/repair.json).
+`vc` is our implementation of the published VC-Attention method. V-Smooth (k-means value grouping, K/V permutation, per-block V demeaning restored in the kernel) runs on the kernel's tuned path with fused GPU preparation. Raw records with every sample and execution order: [`comparison.json`](../benchmarks/results/b200/comparison.json) and [`repair.json`](../benchmarks/results/b200/repair.json).
 
 ## Inputs
 
