@@ -1,6 +1,5 @@
 """Audit release contents: package layout, private references and documentation links."""
 
-import hashlib
 import json
 import re
 from pathlib import Path
@@ -15,7 +14,7 @@ PRIVATE = re.compile(r"/Users/|/home/[a-z]|/mnt/disk|/workspace/")
 def _check_records(directory):
     import importlib.util
 
-    spec = importlib.util.spec_from_file_location("records", ROOT / "tools/reports/records.py")
+    spec = importlib.util.spec_from_file_location("records", ROOT / "tools/records.py")
     records = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(records)
     return records.check(directory)
@@ -38,13 +37,8 @@ def audit(root=ROOT):
     )
     if kernels != ["blackwell"]:
         errors.append(f"Unexpected kernel trees: {kernels}")
-    report = json.loads((root / "docs/technical-report/manifest.json").read_text())
-    for name, digest in report["files"].items():
-        if (
-            not (root / name).exists()
-            or hashlib.sha256((root / name).read_bytes()).hexdigest() != digest
-        ):
-            errors.append("Report manifest mismatch (rebuild with tools/reports/build.py): " + name)
+    if not (root / "docs/technical-report/report.en.md").is_file():
+        errors.append("Missing technical report: docs/technical-report/report.en.md")
     errors += ["Benchmark record: " + e for e in _check_records(root / "benchmarks/results/b200")]
     for path in root.rglob("*"):
         rel = path.relative_to(root)
@@ -60,8 +54,6 @@ def audit(root=ROOT):
             ".toml",
             ".yml",
             ".patch",
-            ".tex",
-            ".tikz",
             ".cff",
         }:
             continue

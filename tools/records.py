@@ -5,12 +5,11 @@ quantize-attention run per shape) and ``repair.json`` (Open-VC V repair budgets;
 budget and scope). It refuses incomplete, non-isolated or mixed-source runs, and carries the
 runs' source provenance (per-file hashes, package hash, git revision) into the records.
 
-``check`` validates the published records against what the report build reads, so a schema
-change fails CI instead of the report build.
+``check`` validates the published records' schema and source provenance; the release audit runs it.
 
-    python tools/reports/records.py build --comparison cmp_*.json --repair rep_*.json \\
+    python tools/records.py build --comparison cmp_*.json --repair rep_*.json \\
         --input-description "..." --output-dir benchmarks/results/b200
-    python tools/reports/records.py check
+    python tools/records.py check
 """
 
 import argparse
@@ -18,7 +17,7 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 RECORDS = ROOT / "benchmarks/results/b200"
 BACKENDS = ("bf16", "vc", "open-vc")
 SCOPES = {"attention": "attention", "quantize-attention": "complete_call"}

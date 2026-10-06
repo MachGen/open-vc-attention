@@ -73,7 +73,7 @@ Supported inputs: B200 with CuTe DSL 4.6.2, and matching FP16/BF16 self-attentio
 
 Selected residuals are stored as extra FP8 value rows, each paired with a duplicate of the original key; the duplicate keeps that key's descale. The kernel visits these rows after all original keys and restores the original softmax denominator before normalization. Repair rows therefore add to the output numerator without renormalizing the distribution. Repair corrects V quantization error only, not Q/K or probability error.
 
-Rebuild the prepared object when activations change. `attention_v_repair` accepts `mid_window_blocks` and `softmax_scale`. See [the example](../examples/v_repair.py) and section 4.9 of the [technical report](technical-report/pdf/Open-VC-Attn-Technical-Report-en.pdf).
+Rebuild the prepared object when activations change. `attention_v_repair` accepts `mid_window_blocks` and `softmax_scale`. See [the example](../examples/v_repair.py) and section 4.9 of the [technical report](technical-report/report.en.md).
 
 ## VC-Attention baseline
 

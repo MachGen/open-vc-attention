@@ -29,7 +29,6 @@ def test_built_wheel_and_sdist_inventory():
     with tarfile.open(sources[0]) as archive:
         names = [n.split("/", 1)[-1] for n in archive.getnames()]
         assert "integrations/sglang/install.py" in names
-        assert "docs/technical-report/pdf/Open-VC-Attn-Technical-Report-en.pdf" in names
         assert "docs/technical-report/report.en.md" in names
-        assert "tools/reports/template.tex" in names
+        assert "tools/records.py" in names
         assert "benchmarks/results/b200/comparison.json" in names

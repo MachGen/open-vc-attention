@@ -13,7 +13,7 @@ Xingyang Li, Dongyun Zou, Shining Zhang, Jiacheng Chen, Haocheng Xi,
 Lvmin Zhang, Jun-Yan Zhu, Song Han, Zhekai Zhang, Yujun Lin, Muyang Li.
 VC-Attention: Value Smoothing and Softmax Casting for Low-bit Attention (2026).
 https://arxiv.org/abs/2609.15810
-This repository is an independent implementation, not the authors' official code.
+This repository is an implementation inspired by the published paper.
 
 The BF16 reference is the unmodified upstream flash-attn-4 package (4.0.0b33),
 a separately installed dependency.

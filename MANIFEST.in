@@ -1,10 +1,11 @@
 include LICENSE NOTICE AUTHORS CITATION.cff CONTRIBUTING.md SECURITY.md CHANGELOG.md requirements-tested.txt
 recursive-include .github *.md *.yml
 recursive-include LICENSES *.txt *.md
-recursive-include docs *.md *.json *.pdf *.svg *.png *.bib *.tikz
+recursive-include docs *.md *.json *.svg *.png
+prune docs/technical-report/latex
 recursive-include examples *.py *.json *.md
 recursive-include integrations *.patch *.json *.md *.py
-recursive-include tools *.py *.md *.tex
+recursive-include tools *.py *.md
 recursive-include tests *.py *.md
 recursive-include src README.md
 recursive-include benchmarks *.md *.json

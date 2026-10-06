@@ -19,7 +19,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.9", "build"]
-report = ["numpy", "matplotlib>=3.9", "ml_dtypes", "pypdfium2"]
 
 [project.scripts]
 open-vc-attn-bench = "open_vc_attn.cli.bench:main"

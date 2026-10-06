@@ -8,7 +8,7 @@ FP8 forward attention for NVIDIA Blackwell (B200 / B300), built on the FlashAtte
 - fused three-kernel input preparation on B200;
 - optional V residual repair.
 
-See the [technical report](docs/technical-report/pdf/Open-VC-Attn-Technical-Report-en.pdf) for the design and its numerics.
+See the [technical report](docs/technical-report/report.en.md) for the design and its numerics.
 
 ## Results
 
@@ -66,4 +66,4 @@ The VC-Attention baseline used in the comparison is available as `open_vc_attn.b
 
 ## License and attribution
 
-BSD-3-Clause. Open-VC derives from [FlashAttention](https://github.com/Dao-AILab/flash-attention) and implements ExpCast from VC-Attention. It is independent of the VC-Attention authors' implementation. See [NOTICE](NOTICE) and [CITATION.cff](CITATION.cff).
+BSD-3-Clause. Open-VC derives from [FlashAttention](https://github.com/Dao-AILab/flash-attention) and implements ExpCast from VC-Attention. Open-VC is an implementation inspired by the published VC-Attention paper. See [NOTICE](NOTICE) and [CITATION.cff](CITATION.cff).

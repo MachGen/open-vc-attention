@@ -16,4 +16,4 @@ python -m pytest tests/gpu
 OPEN_VC_ATTN_TEST_LARGE=1 python -m pytest tests/gpu -m large
 ```
 
-Publish only complete timing runs from a reserved GPU, with raw samples. When changing the technical report or the benchmark records, rebuild the PDF with `python tools/reports/build.py --render <dir>` and inspect every page; the release audit checks the report manifest. Public artifacts must contain no private hosts, paths or user data.
+Publish only complete timing runs from a reserved GPU, with raw samples. When the benchmark records change, update the technical report's Markdown and PDF to match. Public artifacts must contain no private hosts, paths or user data.
