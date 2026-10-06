@@ -1,6 +1,6 @@
 # Open-VC Attention: FP8 attention with softmax casting for long-sequence video diffusion on NVIDIA Blackwell
 
-**MachGen AI** · Technical report · Revision 1.0 · October 2026
+**MachGen AI** · Technical report · October 2026
 
 Code: <https://github.com/MachGen/open-vc-attention> · Package: `open-vc-attn` · License: BSD-3-Clause
 
