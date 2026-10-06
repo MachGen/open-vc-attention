@@ -1,0 +1,10 @@
+# Constraints for the tested CUDA 13 stack. Use with pip install -c, not pip -r.
+# Install torch from https://download.pytorch.org/whl/cu130 first.
+# Extras belong in pyproject.toml requirements; pip constraints cannot contain extras.
+torch==2.11.0
+triton==3.6.0
+nvidia-cutlass-dsl==4.6.0
+quack-kernels==0.6.1
+cuda-python==13.0.3
+flash-attn-4==4.0.0b21
+einops==0.8.1

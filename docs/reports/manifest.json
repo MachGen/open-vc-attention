@@ -1,0 +1,15 @@
+{
+  "review": "Reproduction edition: all 15 English and 15 Chinese pages rendered and visually checked; public text, links and metadata reviewed. Historical measurement JSON unchanged.",
+  "reports": {
+    "VC-Attention-Fusedpipe-D-Tech-Report-zh.pdf": {
+      "sha256": "a22b626fc5a4cfe707a90b77a0ec00ef3a6c2b7c379dd389cfb21a610585a8d8",
+      "bytes": 296698,
+      "pages": 15
+    },
+    "VC-Attention-Fusedpipe-D-Technical-Report.pdf": {
+      "sha256": "1af5b862dd30d86a73bb25e775e34d37a9a4af499bffe636c224d1b2f997be63",
+      "bytes": 47705,
+      "pages": 15
+    }
+  }
+}

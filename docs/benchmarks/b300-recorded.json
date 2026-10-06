@@ -1,0 +1,423 @@
+{
+  "record_kind": "historical_source_revision_measurement",
+  "measurement_date": "2026-09-26",
+  "standalone_wheel_rerun": false,
+  "source_revision": "4245ca87a02a476e89b793a5541a1f0576684b01",
+  "source_json_sha256": "ec4cf9c7e7f771965b000b9a7a4170f4cffae99467929ad8b3ebaed06a4e3ffb",
+  "source_report_sha256": "2bf4aefd61ce1ba7546b782368dcecaf15f6e700ae127abbbc17623ccbc3cb05",
+  "provenance": {
+    "matched_original_cute_files": {
+      "fp8_tuning.py": "83e9d9e3f3600ef3f024930d10c5f631a958a5e67c00d889ae2feb9046b2d572",
+      "interface.py": "81f9933922797fd264fe708c6feb8f9957c7169bddb0e437f7b4fb579b1b384b",
+      "v_layout.py": "4b3d3fd31b57dd08ee2b5703156da56763ac6519e1a5a5e38e714629e9950398",
+      "cute_dsl_ptxas.py": "21f0674c9f5a99d7c339092e49d5822d387b0a4673888becff1ac073cb5ac619",
+      "block_sparsity.py": "87a995b440ed1fb59b286fe4890eb331e11df149c410ec3a6ccd22e0d1f27f5a",
+      "cute_dsl_utils.py": "506ad191e3457edb6dcf103c918e97d95b6b838ebec1c320b078d894f7de4ab0",
+      "flash_fwd_combine.py": "1c0d8fb07b0351b33c260dfce701d893344c9a1ed55c281e350cc4deb65b7120",
+      "seqlen_info.py": "19f9354f5a3c61c98404e30fe5fa032e506f409e23661538b71027c67f80ed14",
+      "utils.py": "230ad89c83e87044b260d4e320febe30b38ceb3441965bdb67fa94629b20413c",
+      "flash_bwd_postprocess.py": "6e822a1d778a2d3f652df083dc083d71d484877eda1f6cf2fa1973c05299f00d",
+      "tile_scheduler.py": "40a7eea0aab6ff82e1242bfd1fff587252ad6c659a203555377d9c9d9f2a35ef",
+      "fast_math.py": "7e5f822bf4d0ba36967558f3ae9a1408b410cb726c31222cd61703569d1be738",
+      "ampere_helpers.py": "cadac170a7da379e27c36d044360480d710cfa88d082dad2b9decd58e4847111",
+      "copy_utils.py": "44fdafecb0df34e88b25a78e6a2ba3ec9a9b64406de0e0182b3d59d40721190a",
+      "flash_bwd_sm100.py": "a9be395879a64e92ed096ca1ade64bff08a528e932e6fff2695f5534192a90ae",
+      "block_sparse_utils.py": "f4dbae6f34d798b5ca95cd81e916932ceabbd9cec13b4d797501cdf6c85de33f",
+      "named_barrier.py": "43005ab647e060694be686784e20a699fafe0bef6da8f848293fd7c95b638c53",
+      "softmax.py": "b30826158df33399c045104c7d03301508c839140ee16c4cd69e522deda696bb",
+      "barrier.py": "767af807aa7521b8d15ee6c9534f4745a7ad2224b0da2b816cc49ccb9ea6c119",
+      "block_info.py": "5d90add47ebea9456ce67984c111696a4c4649e1a83be75efc856adfad4321d6",
+      "mask.py": "c799186666cd24fa073f01f4c76b291826887ff0bd4d29010308d7e8e06f36eb",
+      "blackwell_helpers.py": "486b0e8cb1c2b50d56d3438925342cebd7243608498c65e40825f1d3c17cc1e5",
+      "mma_sm100_desc.py": "dc56d8adbc100785c6e5b5d9ef063de3ae954bf9b9fbebdc6cf9543256da0f71",
+      "pipeline.py": "422bf47afe492f81296c0afd2f3a7ef1ec67479a6466cc734d5d4a2ac0c8a47c",
+      "flash_bwd_sm90.py": "ece1de911fb6ce532fa62c9a6a9c598beb1339f6d47c778dd16d06f45dd77989",
+      "flash_bwd.py": "e79dbb26725405ace4e6bbc1a2c88d8070657f61de6b9f2044767392ff5b3de1",
+      "flash_bwd_preprocess.py": "0520efbc183fc1268933924f7905adfd9009c3171ad55caba5584d5207a971f4",
+      "flash_fwd_sm100.py": "14cb34c3f0a17e34e7ac7d5dd9d39b58ce1db41a4bffd76f9846b0478e61ede5",
+      "pack_gqa.py": "ab78aafd4965ab5da70960be371ad77327ae5bae3c6e245fd801a23c77656c74",
+      "paged_kv.py": "3c089a7330c84bfe509b0f2f63dda337f0186bd95eaa4924d0f30a5803bb4e63",
+      "flash_fwd.py": "e1444d52bca7f8ba7baeda1a0db6054da367d49855db3abec9ce9b31877a9733"
+    },
+    "matched_count": 31,
+    "scope": "Original CuTe kernel file hashes match the frozen scaled snapshot before namespace rewriting; the standalone wrapper was not used in this measurement."
+  },
+  "gpu": "NVIDIA B300 SXM6 AC",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "nvidia-cutlass-dsl": "4.6.0",
+    "quack-kernels": "0.6.1",
+    "flash-attn": "2.8.3+cu130torch2.11",
+    "flash-attn-4": "4.0.0b21"
+  },
+  "input_kind": "Captured MiniMax-H3 activations; private tensors are not distributed.",
+  "baseline_definitions": {
+    "upstream_bf16": {
+      "package": "flash-attn-4==4.0.0b21",
+      "interface_sha256": "45bd04e1ded38264905a5907d309588b2455c5ae9cc1931164a5f7126985ef1c"
+    },
+    "fp8_control": "Same scaled source revision, external Q/K per-128-token-block and V per-head descales, ExpCast disabled; not the pinned fp8_ref snapshot.",
+    "vc_scaled": "Same scaled source revision and descales, ExpCast enabled."
+  },
+  "measurement_scope": "Attention-only CUDA events, internal V packing included; input quantization, compilation, model and communication excluded.",
+  "isolation": "Shared GPU with resident model allocations; accepted idle windows screened with NVML process utilization, including delayed utilization samples. Overlapping rounds discarded. Not an exclusive allocation.",
+  "publication_notes": "Sanitized subset of an earlier source report. Host identifiers, private paths and capture identifiers omitted. Do not compare absolute latency with synthetic-input B200 runs.",
+  "default_scan": {
+    "shape": [
+      73426,
+      56,
+      128
+    ],
+    "method": {
+      "rounds": 12,
+      "layouts": [
+        "varlen"
+      ],
+      "initial_warm_seconds_per_variant": 5.0,
+      "warmup_per_batch": 6,
+      "repeat_per_batch": 10,
+      "timer": "CUDA events",
+      "quantization_timed": false,
+      "scaled_policy": "QK per_block, V per_head",
+      "descales": {
+        "q_descale": [
+          1,
+          56,
+          574
+        ],
+        "k_descale": [
+          1,
+          56,
+          574
+        ],
+        "v_descale": [
+          1,
+          56
+        ]
+      },
+      "mid_window_blocks": null,
+      "skip_softmax": false,
+      "skip_pv": false,
+      "v_smooth_ablation": false,
+      "head_major_modes": [],
+      "reference_head_major": false,
+      "native_v_smooth_kv_strides": null,
+      "v_smooth_clusters": null,
+      "v_smooth_iterations": null,
+      "v_smooth_mean_dtype": null,
+      "reference_v_smooth_mean_dtype": null
+    },
+    "samples_ms": {
+      "upstream_bf16": [
+        106.3104736328125,
+        106.34764404296875,
+        106.30997314453126,
+        106.18863525390626,
+        105.656640625,
+        106.16158447265624,
+        105.96610107421876,
+        106.18555908203125,
+        106.08480224609374,
+        106.097802734375,
+        106.1458251953125,
+        106.18226318359375
+      ],
+      "fp8_control": [
+        70.172607421875,
+        70.27130737304688,
+        70.40686645507813,
+        70.16593627929687,
+        69.79577026367187,
+        70.10572509765625,
+        70.303662109375,
+        70.30598754882813,
+        70.01950073242188,
+        70.12334594726562,
+        70.193994140625,
+        70.24222412109376
+      ],
+      "vc_scaled": [
+        61.58327026367188,
+        61.5711669921875,
+        61.678619384765625,
+        61.39432983398437,
+        61.88922119140625,
+        61.354608154296876,
+        61.38151245117187,
+        61.433355712890624,
+        61.305657958984376,
+        61.300445556640625,
+        61.39085693359375,
+        61.3167236328125
+      ]
+    },
+    "medians_ms": {
+      "upstream_bf16": 106.17192382812499,
+      "fp8_control": 70.18330078125,
+      "vc_scaled": 61.39259338378906
+    },
+    "vc_speedup": {
+      "upstream_bf16": 1.7293930419978003,
+      "fp8_control": 1.1431884029154264
+    },
+    "accuracy_vs_upstream_bf16": {
+      "upstream_bf16": {
+        "relative_l2": 0.0,
+        "max_abs": 0.0,
+        "finite": true
+      },
+      "fp8_control": {
+        "relative_l2": 0.028459564994784248,
+        "max_abs": 1.6875,
+        "finite": true
+      },
+      "vc_scaled": {
+        "relative_l2": 0.028450191251342658,
+        "max_abs": 1.5625,
+        "finite": true
+      }
+    },
+    "discarded_rounds": 4,
+    "telemetry": [
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 251.676,
+        "temperature_c": 42
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 252.451,
+        "temperature_c": 42
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 252.372,
+        "temperature_c": 42
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 251.702,
+        "temperature_c": 42
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 249.929,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 249.969,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.266,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.555,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 249.859,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.511,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.543,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.459,
+        "temperature_c": 40
+      }
+    ]
+  },
+  "appendix_mid_window_4": {
+    "shape": [
+      73426,
+      56,
+      128
+    ],
+    "method": {
+      "rounds": 12,
+      "layouts": [
+        "varlen"
+      ],
+      "initial_warm_seconds_per_variant": 5.0,
+      "warmup_per_batch": 6,
+      "repeat_per_batch": 10,
+      "timer": "CUDA events",
+      "quantization_timed": false,
+      "scaled_policy": "QK per_block, V per_head",
+      "descales": {
+        "q_descale": [
+          1,
+          56,
+          574
+        ],
+        "k_descale": [
+          1,
+          56,
+          574
+        ],
+        "v_descale": [
+          1,
+          56
+        ]
+      },
+      "mid_window_blocks": 4,
+      "skip_softmax": false,
+      "skip_pv": false,
+      "v_smooth_ablation": false,
+      "head_major_modes": [],
+      "reference_head_major": false,
+      "native_v_smooth_kv_strides": null,
+      "v_smooth_clusters": null,
+      "v_smooth_iterations": null,
+      "v_smooth_mean_dtype": null,
+      "reference_v_smooth_mean_dtype": null
+    },
+    "samples_ms": {
+      "upstream_bf16": [
+        106.25885009765625,
+        106.28333740234375,
+        106.27166748046875,
+        106.222607421875,
+        106.20406494140624,
+        105.9624267578125,
+        105.86422119140624,
+        105.87138671875,
+        106.18841552734375,
+        106.22120361328125,
+        106.21566162109374,
+        106.27012939453125
+      ],
+      "fp8_control": [
+        69.87276611328124,
+        69.8809326171875,
+        69.86048583984375,
+        70.06578979492187,
+        70.01356201171875,
+        69.93737182617187,
+        69.6940673828125,
+        69.83743896484376,
+        70.08648071289062,
+        69.93810424804687,
+        69.84470825195312,
+        70.129296875
+      ],
+      "vc_scaled": [
+        58.745635986328125,
+        58.69713134765625,
+        58.64735717773438,
+        58.53319091796875,
+        58.616668701171875,
+        58.56892700195313,
+        58.42677612304688,
+        58.52906494140625,
+        58.59953002929687,
+        58.510565185546874,
+        58.58970336914062,
+        58.602606201171874
+      ]
+    },
+    "medians_ms": {
+      "upstream_bf16": 106.21843261718749,
+      "fp8_control": 69.90915222167968,
+      "vc_scaled": 58.59461669921875
+    },
+    "vc_speedup": {
+      "upstream_bf16": 1.812767769476743,
+      "fp8_control": 1.1930985500006144
+    },
+    "accuracy_vs_upstream_bf16": {
+      "upstream_bf16": {
+        "relative_l2": 0.0,
+        "max_abs": 0.0,
+        "finite": true
+      },
+      "fp8_control": {
+        "relative_l2": 0.02853600340179056,
+        "max_abs": 1.40625,
+        "finite": true
+      },
+      "vc_scaled": {
+        "relative_l2": 0.028735655247792327,
+        "max_abs": 3.9375,
+        "finite": true
+      }
+    },
+    "discarded_rounds": 2,
+    "telemetry": [
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.862,
+        "temperature_c": 41
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 251.376,
+        "temperature_c": 41
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.937,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.241,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.349,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.428,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 249.734,
+        "temperature_c": 40
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 250.846,
+        "temperature_c": 41
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 251.411,
+        "temperature_c": 41
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 251.752,
+        "temperature_c": 42
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 252.201,
+        "temperature_c": 42
+      },
+      {
+        "sm_clock_mhz": 2032,
+        "power_w": 252.445,
+        "temperature_c": 42
+      }
+    ]
+  }
+}

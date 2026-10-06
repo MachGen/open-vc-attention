@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+results/
+*.so
+*.cubin
+*.ncu-rep
+*.nsys-rep
+*.pt
+*.safetensors
+*.mp4
+.env*

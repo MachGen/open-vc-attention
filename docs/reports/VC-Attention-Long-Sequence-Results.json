@@ -1,0 +1,784 @@
+{
+  "schema": "vc-longseq-public-summary-v1",
+  "status": "complete",
+  "expected_shape_matrix": [
+    [
+      188214,
+      7,
+      128
+    ],
+    [
+      188214,
+      56,
+      128
+    ],
+    [
+      262144,
+      7,
+      128
+    ],
+    [
+      262144,
+      56,
+      128
+    ]
+  ],
+  "missing_shapes": [],
+  "accepted_case_count": 4,
+  "excluded_report_count": 3,
+  "device": "NVIDIA B200 / SM100",
+  "input_kind": "synthetic_bf16_normal",
+  "input_distribution": "Independent CPU torch.randn BF16 Q/K/V, with generator seeds seed, seed+1 and seed+2.",
+  "configuration": {
+    "mid_window_blocks": 4,
+    "expcast": true,
+    "descales": "all Q/K/V supplied",
+    "causal": false,
+    "skipping": false
+  },
+  "settings": {
+    "rounds": 12,
+    "repeats": 5,
+    "warm_calls": 2,
+    "warm_seconds": 1.0
+  },
+  "scope": "One attention kernel per graph replay, CUDA-event elapsed time divided by 5 replays.",
+  "excluded": [
+    "QKV generation",
+    "QKV quantization",
+    "V packing",
+    "allocation",
+    "compilation",
+    "validation",
+    "profiling",
+    "model execution",
+    "communication"
+  ],
+  "baseline_semantics": {
+    "v4": "Matched pre-fusedpipe VC FP8 kernel",
+    "fusedpipe": "Matched VC FP8 fusedpipe control",
+    "d": "D binary derivative of exactly the same fusedpipe control",
+    "bf16": "Pinned BF16 reference, freshly measured in the same run and paired rounds"
+  },
+  "bf16_comparison": "New same-run paired BF16 / D kernel timing; no historical numerator is reused.",
+  "precision_contract": "FP8 scheduling variants pass complete output byte equality to their matching FP8 controls. BF16 is timed separately; equality to BF16 is not claimed.",
+  "artifact_proof_scope": "CPU-verified exact D artifact, isolated host/internal symbols and invoked one-kernel callable; this run does not provide a new device-code dump.",
+  "clocks": "Clocks were not locked. Dynamic pstate/clock changes are recorded internally, not treated as immutable configuration.",
+  "notes": [
+    "Synthetic long-sequence inputs are separate from the earlier production-capture cohort.",
+    "Do not multiply separate speedup ratios or pool independent cohorts into a new measured result.",
+    "Missing and rejected cases are not replaced by historical data."
+  ],
+  "rows": [
+    {
+      "shape": [
+        188214,
+        7,
+        128
+      ],
+      "input": {
+        "kind": "synthetic_bf16_normal",
+        "seed": 20261004,
+        "generator_seeds": {
+          "q": 20261004,
+          "k": 20261005,
+          "v": 20261006
+        },
+        "qkv_sha256": {
+          "q": "3b6743c204b03ec347778ccd64268f21493da7ac8b66634ffcd267636db68251",
+          "k": "08ca72eaddfa7a01ccdd21a421f3066b93f483c29119ac6b236a50b3d78290d8",
+          "v": "0afc8f603a30953d058a53c6b0834270fb2e807bdade46de399d66b7c133433a"
+        }
+      },
+      "rounds": 12,
+      "median_ms": {
+        "v4": 49.30435791015625,
+        "fusedpipe": 48.244329833984374,
+        "d": 48.13720703125,
+        "bf16": 94.80950012207032
+      },
+      "comparisons": {
+        "v4_over_fusedpipe": {
+          "control": "v4",
+          "candidate": "fusedpipe",
+          "ratio_of_medians": 1.0219720758858002,
+          "paired_geometric_mean": 1.0216930272764,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        },
+        "fusedpipe_over_d": {
+          "control": "fusedpipe",
+          "candidate": "d",
+          "ratio_of_medians": 1.0022253638991734,
+          "paired_geometric_mean": 1.0016447194174307,
+          "wins": 9,
+          "ties": 0,
+          "rounds": 12
+        },
+        "v4_over_d": {
+          "control": "v4",
+          "candidate": "d",
+          "ratio_of_medians": 1.0242463356494396,
+          "paired_geometric_mean": 1.023373425637015,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        },
+        "bf16_over_d": {
+          "control": "bf16",
+          "candidate": "d",
+          "ratio_of_medians": 1.9695679489780393,
+          "paired_geometric_mean": 1.9703465696050857,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        }
+      },
+      "raw_samples_ms": {
+        "v4": [
+          48.96602172851563,
+          49.49278869628906,
+          49.34184875488281,
+          49.4587890625,
+          49.266867065429686,
+          49.26204223632813,
+          49.1485107421875,
+          49.57596130371094,
+          49.155096435546874,
+          49.4299072265625,
+          48.93411865234375,
+          49.39201965332031
+        ],
+        "fusedpipe": [
+          48.033792114257814,
+          48.244940185546874,
+          48.17569274902344,
+          48.26781311035156,
+          48.316619873046875,
+          48.243719482421874,
+          48.218316650390626,
+          48.2826171875,
+          48.22732849121094,
+          48.28755187988281,
+          48.23056640625,
+          48.33381652832031
+        ],
+        "d": [
+          48.12309265136719,
+          48.01781005859375,
+          48.15132141113281,
+          48.016180419921874,
+          48.08642578125,
+          48.43172607421875,
+          48.06696472167969,
+          48.0997314453125,
+          48.1836669921875,
+          48.289617919921874,
+          48.186624145507814,
+          48.26009521484375
+        ],
+        "bf16": [
+          95.27600708007813,
+          94.8580322265625,
+          94.93667602539062,
+          94.7089599609375,
+          95.0360107421875,
+          94.74129638671874,
+          94.46215209960937,
+          94.50416870117188,
+          94.6722900390625,
+          95.4955810546875,
+          95.23981323242188,
+          94.76096801757812
+        ]
+      },
+      "order_position_counts": {
+        "v4": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "fusedpipe": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "d": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "bf16": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      "coefficient_of_variation": {
+        "v4": 0.004126339492236398,
+        "fusedpipe": 0.0016168364097166698,
+        "d": 0.002519573309330234,
+        "bf16": 0.0033528668130680173
+      },
+      "evidence": {
+        "result_sha256": "da0cc8cacfe260d418bce1ce952e16b79dbe622a5e8baaae94813796faef95c0",
+        "controls_manifest_sha256": "cf4e81af33b95017a9049a1d28f580e7d70ac1747ca7040f8dfcdfaef6356978",
+        "derivative_manifest_sha256": "d68ad2a7d47e003f31a47fe6f3b0056db70c37c83e9e3bfe9d7828bf150463ea",
+        "source_provenance_sha256": "c2b90d7a01c1c132ce0e4270c70e5ee70bad41d75b3af693360045d4386bac4d",
+        "shared_library_sha256": {
+          "v4": "901928da4634108e5334297f91e554250d0e1815594f1d90c21a265ab51535fc",
+          "fusedpipe": "770f2ca96732822c8977965e4aafa4efe3780c97ccc32854c14ad17bb300d35a",
+          "d": "72c72a23327e304a22dee11ab3689eb9aa4ed9bc1967c58070a502e4ce6c9695",
+          "bf16": "fa132accc0f199c0908a5effff9159eefd0e743c906fa7bab95ad28abcbe54e3"
+        }
+      },
+      "ownership_checks": 211,
+      "all_output_byte_checks_passed": true,
+      "single_kernel_each": true,
+      "bf16_same_run_and_paired": true
+    },
+    {
+      "shape": [
+        188214,
+        56,
+        128
+      ],
+      "input": {
+        "kind": "synthetic_bf16_normal",
+        "seed": 20261004,
+        "generator_seeds": {
+          "q": 20261004,
+          "k": 20261005,
+          "v": 20261006
+        },
+        "qkv_sha256": {
+          "q": "2e20c2a7783f1f45c119ed006bc66de495dc5c1f3d255dbe8a4952e4bcc1f0ff",
+          "k": "845c2f24cfcfc1fbcd4b9eeaaaffb4733cf523694f302f8e49bf482170c1ba59",
+          "v": "acd74c9f2223329c768e8d9b85b5a8b06c1e28c47dbaa2d016678f754b8f79c5"
+        }
+      },
+      "rounds": 12,
+      "median_ms": {
+        "v4": 402.0573364257813,
+        "fusedpipe": 394.094482421875,
+        "d": 393.83714599609374,
+        "bf16": 763.531982421875
+      },
+      "comparisons": {
+        "v4_over_fusedpipe": {
+          "control": "v4",
+          "candidate": "fusedpipe",
+          "ratio_of_medians": 1.0202054440218782,
+          "paired_geometric_mean": 1.0205123414118222,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        },
+        "fusedpipe_over_d": {
+          "control": "fusedpipe",
+          "candidate": "d",
+          "ratio_of_medians": 1.0006534082130074,
+          "paired_geometric_mean": 1.0005706873302451,
+          "wins": 8,
+          "ties": 0,
+          "rounds": 12
+        },
+        "v4_over_d": {
+          "control": "v4",
+          "candidate": "d",
+          "ratio_of_medians": 1.020872054637957,
+          "paired_geometric_mean": 1.0210947348754247,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        },
+        "bf16_over_d": {
+          "control": "bf16",
+          "candidate": "d",
+          "ratio_of_medians": 1.9386997650786553,
+          "paired_geometric_mean": 1.9384949611536273,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        }
+      },
+      "raw_samples_ms": {
+        "v4": [
+          402.110302734375,
+          401.3703369140625,
+          402.3865234375,
+          402.0043701171875,
+          401.8004150390625,
+          401.8749267578125,
+          402.45947265625,
+          401.7650146484375,
+          402.2699951171875,
+          402.4649658203125,
+          403.7095458984375,
+          401.877392578125
+        ],
+        "fusedpipe": [
+          392.0449462890625,
+          394.292822265625,
+          393.1322265625,
+          394.27685546875,
+          395.1974365234375,
+          393.208837890625,
+          395.5408935546875,
+          394.0583251953125,
+          395.57939453125,
+          394.1306396484375,
+          393.759130859375,
+          393.8773193359375
+        ],
+        "d": [
+          392.92763671875,
+          393.5952880859375,
+          393.996484375,
+          394.24287109375,
+          395.205419921875,
+          393.175244140625,
+          393.83837890625,
+          393.0601318359375,
+          394.484912109375,
+          393.543701171875,
+          394.4869873046875,
+          393.8359130859375
+        ],
+        "bf16": [
+          762.625,
+          760.876025390625,
+          763.2318359375,
+          763.2697265625,
+          760.7908203125,
+          764.863134765625,
+          761.506787109375,
+          765.151904296875,
+          765.700732421875,
+          765.108447265625,
+          765.180517578125,
+          763.79423828125
+        ]
+      },
+      "order_position_counts": {
+        "v4": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "fusedpipe": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "d": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "bf16": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      "coefficient_of_variation": {
+        "v4": 0.0014501272531596337,
+        "fusedpipe": 0.0026124083985806144,
+        "d": 0.0016958765474689708,
+        "bf16": 0.0023031825872531866
+      },
+      "evidence": {
+        "result_sha256": "fe5f795dcb44cb75d374c3ac98d7a0d7b9f47ad86e7c046fcd97a04d3b576e7f",
+        "controls_manifest_sha256": "cf4e81af33b95017a9049a1d28f580e7d70ac1747ca7040f8dfcdfaef6356978",
+        "derivative_manifest_sha256": "d68ad2a7d47e003f31a47fe6f3b0056db70c37c83e9e3bfe9d7828bf150463ea",
+        "source_provenance_sha256": "c2b90d7a01c1c132ce0e4270c70e5ee70bad41d75b3af693360045d4386bac4d",
+        "shared_library_sha256": {
+          "v4": "901928da4634108e5334297f91e554250d0e1815594f1d90c21a265ab51535fc",
+          "fusedpipe": "770f2ca96732822c8977965e4aafa4efe3780c97ccc32854c14ad17bb300d35a",
+          "d": "72c72a23327e304a22dee11ab3689eb9aa4ed9bc1967c58070a502e4ce6c9695",
+          "bf16": "fa132accc0f199c0908a5effff9159eefd0e743c906fa7bab95ad28abcbe54e3"
+        }
+      },
+      "ownership_checks": 641,
+      "all_output_byte_checks_passed": true,
+      "single_kernel_each": true,
+      "bf16_same_run_and_paired": true
+    },
+    {
+      "shape": [
+        262144,
+        7,
+        128
+      ],
+      "input": {
+        "kind": "synthetic_bf16_normal",
+        "seed": 20261004,
+        "generator_seeds": {
+          "q": 20261004,
+          "k": 20261005,
+          "v": 20261006
+        },
+        "qkv_sha256": {
+          "q": "fd76a17858ad6a4aa85e02e7fa1c241ac1f201e8115cbfcc4a2012b59a27e0a6",
+          "k": "6e58aa17add2ad326822c0b8a0efa2d3809c6ab4481fe87666962d32a8fb8d0e",
+          "v": "63b108a906ef9d31ce1e92a8df9ffb29103c086690295c3dc8d75748f9211594"
+        }
+      },
+      "rounds": 12,
+      "median_ms": {
+        "v4": 96.32318115234375,
+        "fusedpipe": 94.386279296875,
+        "d": 94.31340026855469,
+        "bf16": 185.55064697265624
+      },
+      "comparisons": {
+        "v4_over_fusedpipe": {
+          "control": "v4",
+          "candidate": "fusedpipe",
+          "ratio_of_medians": 1.0205210107856522,
+          "paired_geometric_mean": 1.0201433283433714,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        },
+        "fusedpipe_over_d": {
+          "control": "fusedpipe",
+          "candidate": "d",
+          "ratio_of_medians": 1.0007727324867177,
+          "paired_geometric_mean": 1.0001686961939062,
+          "wins": 7,
+          "ties": 0,
+          "rounds": 12
+        },
+        "v4_over_d": {
+          "control": "v4",
+          "candidate": "d",
+          "ratio_of_medians": 1.021309600524064,
+          "paired_geometric_mean": 1.0203154226401017,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        },
+        "bf16_over_d": {
+          "control": "bf16",
+          "candidate": "d",
+          "ratio_of_medians": 1.9673837062846438,
+          "paired_geometric_mean": 1.9668557248013043,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        }
+      },
+      "raw_samples_ms": {
+        "v4": [
+          96.31376342773437,
+          96.18966064453124,
+          95.90927734375,
+          96.45138549804688,
+          96.41575317382812,
+          96.0155517578125,
+          96.57140502929687,
+          96.05090942382813,
+          96.19723510742188,
+          96.48042602539063,
+          96.33259887695313,
+          96.357373046875
+        ],
+        "fusedpipe": [
+          94.43347778320313,
+          94.40728149414062,
+          94.36508178710938,
+          94.39786376953126,
+          94.28279418945313,
+          94.21763305664062,
+          94.37469482421875,
+          94.18363647460937,
+          94.62742919921875,
+          94.42242431640625,
+          94.31474609375,
+          94.44495239257813
+        ],
+        "d": [
+          94.72286987304688,
+          94.30472412109376,
+          94.119580078125,
+          94.17913208007812,
+          94.75479125976562,
+          94.44161987304688,
+          94.55328979492188,
+          94.32207641601562,
+          94.48673095703126,
+          94.25162963867187,
+          94.05829467773438,
+          94.08875122070313
+        ],
+        "bf16": [
+          185.439453125,
+          185.25904541015626,
+          184.98909912109374,
+          185.72965087890626,
+          184.98890380859376,
+          185.3032470703125,
+          186.028857421875,
+          185.61392822265626,
+          186.12408447265625,
+          185.48736572265625,
+          185.8012939453125,
+          186.27215576171875
+        ]
+      },
+      "order_position_counts": {
+        "v4": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "fusedpipe": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "d": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "bf16": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      "coefficient_of_variation": {
+        "v4": 0.002117577103553673,
+        "fusedpipe": 0.0012348919168440906,
+        "d": 0.002513775922597128,
+        "bf16": 0.002271652716350092
+      },
+      "evidence": {
+        "result_sha256": "4d86bbc6f3ab101a8c23c9e8911ea47f1e2c39514a19d9062ef27180b3bb2c2d",
+        "controls_manifest_sha256": "cf4e81af33b95017a9049a1d28f580e7d70ac1747ca7040f8dfcdfaef6356978",
+        "derivative_manifest_sha256": "d68ad2a7d47e003f31a47fe6f3b0056db70c37c83e9e3bfe9d7828bf150463ea",
+        "source_provenance_sha256": "c2b90d7a01c1c132ce0e4270c70e5ee70bad41d75b3af693360045d4386bac4d",
+        "shared_library_sha256": {
+          "v4": "901928da4634108e5334297f91e554250d0e1815594f1d90c21a265ab51535fc",
+          "fusedpipe": "770f2ca96732822c8977965e4aafa4efe3780c97ccc32854c14ad17bb300d35a",
+          "d": "72c72a23327e304a22dee11ab3689eb9aa4ed9bc1967c58070a502e4ce6c9695",
+          "bf16": "fa132accc0f199c0908a5effff9159eefd0e743c906fa7bab95ad28abcbe54e3"
+        }
+      },
+      "ownership_checks": 268,
+      "all_output_byte_checks_passed": true,
+      "single_kernel_each": true,
+      "bf16_same_run_and_paired": true
+    },
+    {
+      "shape": [
+        262144,
+        56,
+        128
+      ],
+      "input": {
+        "kind": "synthetic_bf16_normal",
+        "seed": 20261004,
+        "generator_seeds": {
+          "q": 20261004,
+          "k": 20261005,
+          "v": 20261006
+        },
+        "qkv_sha256": {
+          "q": "b434d570266a9619a5cb3ebde6977e6a145e89f57200e099ebfda6b938b859c4",
+          "k": "444daabaf2437a5942ffa115a8dceb1b26e7de64b4c94c3c40c8ba2ee80d6394",
+          "v": "cd3d7bbe35585dd68433b994284cb2d544b8e43aba823042917063b152ec1542"
+        }
+      },
+      "rounds": 12,
+      "median_ms": {
+        "v4": 781.8943359375,
+        "fusedpipe": 771.2111572265626,
+        "d": 772.1521240234374,
+        "bf16": 1480.788720703125
+      },
+      "comparisons": {
+        "v4_over_fusedpipe": {
+          "control": "v4",
+          "candidate": "fusedpipe",
+          "ratio_of_medians": 1.0138524690816928,
+          "paired_geometric_mean": 1.0131948590363686,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        },
+        "fusedpipe_over_d": {
+          "control": "fusedpipe",
+          "candidate": "d",
+          "ratio_of_medians": 0.9987813712251781,
+          "paired_geometric_mean": 0.9999249955612677,
+          "wins": 8,
+          "ties": 0,
+          "rounds": 12
+        },
+        "v4_over_d": {
+          "control": "v4",
+          "candidate": "d",
+          "ratio_of_medians": 1.0126169592894456,
+          "paired_geometric_mean": 1.01311886492464,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        },
+        "bf16_over_d": {
+          "control": "bf16",
+          "candidate": "d",
+          "ratio_of_medians": 1.9177422098992736,
+          "paired_geometric_mean": 1.9164864914700488,
+          "wins": 12,
+          "ties": 0,
+          "rounds": 12
+        }
+      },
+      "raw_samples_ms": {
+        "v4": [
+          781.983740234375,
+          784.20556640625,
+          780.0076171875,
+          780.00927734375,
+          779.70390625,
+          783.469140625,
+          780.542578125,
+          779.7255859375,
+          781.804931640625,
+          784.851953125,
+          784.573876953125,
+          783.510986328125
+        ],
+        "fusedpipe": [
+          770.589892578125,
+          770.202197265625,
+          773.614208984375,
+          773.7126953125,
+          771.51640625,
+          770.543798828125,
+          770.2046875,
+          770.905908203125,
+          774.03525390625,
+          770.81455078125,
+          774.02333984375,
+          772.002392578125
+        ],
+        "d": [
+          769.495849609375,
+          770.1001953125,
+          772.153759765625,
+          771.059912109375,
+          774.65068359375,
+          772.53408203125,
+          772.15048828125,
+          772.24833984375,
+          773.56796875,
+          770.3314453125,
+          773.665380859375,
+          770.90224609375
+        ],
+        "bf16": [
+          1472.84462890625,
+          1477.4638671875,
+          1472.92158203125,
+          1482.7798828125,
+          1481.84423828125,
+          1472.51708984375,
+          1480.62626953125,
+          1481.53134765625,
+          1479.979296875,
+          1484.0697265625,
+          1480.951171875,
+          1484.65537109375
+        ]
+      },
+      "order_position_counts": {
+        "v4": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "fusedpipe": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "d": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "bf16": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      "coefficient_of_variation": {
+        "v4": 0.0025745800900021983,
+        "fusedpipe": 0.0020258547679859453,
+        "d": 0.002040749285634159,
+        "bf16": 0.002965088636265973
+      },
+      "evidence": {
+        "result_sha256": "cfdd2ff6feee1ba37b6bbbc05f3f91c8d75ad619e08a76101b6a6c2a250d9339",
+        "controls_manifest_sha256": "cf4e81af33b95017a9049a1d28f580e7d70ac1747ca7040f8dfcdfaef6356978",
+        "derivative_manifest_sha256": "d68ad2a7d47e003f31a47fe6f3b0056db70c37c83e9e3bfe9d7828bf150463ea",
+        "source_provenance_sha256": "c2b90d7a01c1c132ce0e4270c70e5ee70bad41d75b3af693360045d4386bac4d",
+        "shared_library_sha256": {
+          "v4": "901928da4634108e5334297f91e554250d0e1815594f1d90c21a265ab51535fc",
+          "fusedpipe": "770f2ca96732822c8977965e4aafa4efe3780c97ccc32854c14ad17bb300d35a",
+          "d": "72c72a23327e304a22dee11ab3689eb9aa4ed9bc1967c58070a502e4ce6c9695",
+          "bf16": "fa132accc0f199c0908a5effff9159eefd0e743c906fa7bab95ad28abcbe54e3"
+        }
+      },
+      "ownership_checks": 1107,
+      "all_output_byte_checks_passed": true,
+      "single_kernel_each": true,
+      "bf16_same_run_and_paired": true
+    }
+  ],
+  "aggregate": {
+    "v4_over_fusedpipe": {
+      "geometric_mean_of_case_median_ratios": 1.019132954167434,
+      "paired_wins": 48,
+      "paired_rounds": 48
+    },
+    "fusedpipe_over_d": {
+      "geometric_mean_of_case_median_ratios": 1.0006074715499407,
+      "paired_wins": 32,
+      "paired_rounds": 48
+    },
+    "v4_over_d": {
+      "geometric_mean_of_case_median_ratios": 1.0197520484426978,
+      "paired_wins": 48,
+      "paired_rounds": 48
+    },
+    "bf16_over_d": {
+      "geometric_mean_of_case_median_ratios": 1.9482299071362303,
+      "paired_wins": 48,
+      "paired_rounds": 48
+    }
+  }
+}

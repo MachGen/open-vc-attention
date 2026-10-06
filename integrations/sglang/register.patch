@@ -1,0 +1,25 @@
+--- a/python/sglang/multimodal_gen/runtime/platforms/interface.py
++++ b/python/sglang/multimodal_gen/runtime/platforms/interface.py
+@@ -51,6 +51,7 @@
+     SUBBLOCK_SPARSE_ATTN = enum.auto()
+     CUBE_SPARSE_ATTN = enum.auto()
+     FP8_FA_SM120 = enum.auto()
++    VC_ATTN = enum.auto()
+     NO_ATTENTION = enum.auto()
+ 
+     def __str__(self):
+--- a/python/sglang/multimodal_gen/runtime/platforms/cuda.py
++++ b/python/sglang/multimodal_gen/runtime/platforms/cuda.py
+@@ -805,6 +805,12 @@
+         head_size: int,
+         dtype: torch.dtype,
+     ) -> str:
++        if selected_backend is AttentionBackendEnum.VC_ATTN:
++            if cls.get_device_capability() not in ((10, 0), (10, 3)):
++                raise ValueError("VC Attention requires SM100/SM103")
++            if head_size != 128 or dtype not in (torch.bfloat16, torch.float16):
++                raise ValueError("VC Attention requires FP16/BF16 with head size 128")
++            return "vc_attn.integrations.sglang.VCAttentionBackend"
+         if selected_backend is None:
+             target_backend = cls._resolve_default_attn_backend()
+             if target_backend == AttentionBackendEnum.FA and cls.is_blackwell():

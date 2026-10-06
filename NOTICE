@@ -1,0 +1,27 @@
+VC Attention
+
+CuTe attention kernels derive from FlashAttention by Tri Dao and contributors.
+Original source copyright headers, AUTHORS and BSD-3-Clause license are retained.
+The extracted kernel files carry additional contributor names in their headers.
+VC/low-bit extensions, attention quantization, native CUDA experiments, standalone
+API and benchmark tooling include work by MachGen contributors.
+
+Upstream project: https://github.com/Dao-AILab/flash-attention
+Source revisions and file hashes: src/vc_attn/source_manifest.json
+
+ExpCast and V-Smooth method attribution:
+Xingyang Li, Dongyun Zou, Shining Zhang, Jiacheng Chen, Haocheng Xi,
+Lvmin Zhang, Jun-Yan Zhu, Song Han, Zhekai Zhang, Yujun Lin, Muyang Li.
+VC-Attention: Value Smoothing and Softmax Casting for Low-bit Attention (2026).
+https://arxiv.org/abs/2609.15810
+This repository is an independent implementation, not the authors' official code.
+
+NVIDIA CUTLASS/CuTe DSL, PyTorch, Triton, quack and cuda-python are separately
+installed dependencies under their respective licenses; their distributions
+are not bundled here. CUDA Toolkit is required to build the native baseline.
+
+The optional SGLang integration patch contains context from SGLang, originally
+adapted from FastVideo/vLLM, under Apache-2.0. See LICENSES/Apache-2.0.txt.
+The adapter itself is independently written against the public interface.
+SGLang source, model weights, captures, datasets and private application code
+are not distributed as part of this repository.

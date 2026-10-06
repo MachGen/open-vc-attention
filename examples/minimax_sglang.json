@@ -1,0 +1,24 @@
+{
+  "server_args": {
+    "model_path": "MiniMaxAI/MiniMax-H3",
+    "model_variant": "fl2va",
+    "num_gpus": 1,
+    "tp_size": 1,
+    "ulysses_degree": 1,
+    "ring_degree": 1,
+    "performance_mode": "lossless",
+    "enable_torch_compile": false,
+    "enable_breakable_cuda_graph": false,
+    "component_attention_backends": {
+      "text_encoder": "fa",
+      "vae": "torch_sdpa"
+    }
+  },
+  "sampling_params": {
+    "prompt": "A small boat crossing a calm lake",
+    "seed": 42,
+    "height": 512,
+    "width": 896,
+    "num_inference_steps": 50
+  }
+}

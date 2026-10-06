@@ -1,0 +1,13 @@
+{
+  "revision": "0318a8d0af86ba14a05ca093aa43fafe446da23e",
+  "files": {
+    "python/sglang/multimodal_gen/runtime/platforms/interface.py": {
+      "original_sha256": "5d0d3094a26cd09cbff6b14fa88e4357c92f70df6e6458e651b1eaa07da54918",
+      "patched_sha256": "663bb2634463d6b2f458e30c590777a8d817e5d25919097c1f72c50525aed6f7"
+    },
+    "python/sglang/multimodal_gen/runtime/platforms/cuda.py": {
+      "original_sha256": "c0a99f13fe1d54e1c9d85cc90ea32c09dbd1ca27451159e0c64953881dd82e9f",
+      "patched_sha256": "e75c8a7364c0c7e2cbf27137bc4dd84c83fee5cef844c6117e8b55ac9e6aa93f"
+    }
+  }
+}

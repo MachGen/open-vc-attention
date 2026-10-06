@@ -1,0 +1,10 @@
+include LICENSE NOTICE AUTHORS CITATION.cff CONTRIBUTING.md SECURITY.md CHANGELOG.md requirements-tested.txt
+recursive-include .github *.md *.yml
+recursive-include LICENSES *.txt *.md
+recursive-include docs *.md *.json
+recursive-include docs/reports *.pdf
+recursive-include examples *.py *.json *.md
+recursive-include integrations *.patch *.json *.md
+recursive-include tools *.py *.md
+recursive-include tests *.py *.md
+recursive-include src README.md

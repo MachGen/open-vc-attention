@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vc-attention"
+version = "0.1.2"
+description = "Scaled ExpCast attention for Blackwell GPUs with reproducible benchmarks"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "BSD-3-Clause"
+license-files = ["LICENSE", "AUTHORS", "NOTICE", "LICENSES/*.txt"]
+authors = [{name = "VC Attention contributors"}]
+dependencies = [
+  "torch>=2.9", "nvidia-cutlass-dsl[cu13]==4.6.0", "quack-kernels[cu13]==0.6.1",
+  "cuda-python>=12.6", "triton>=3.5.1", "einops", "typing_extensions",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.9", "build"]
+upstream = ["flash-attn-4==4.0.0b21"]
+reports = ["reportlab>=4.2", "pypdf>=5"]
+
+[project.scripts]
+vc-attn-bench = "vc_attn.benchmark:main"
+vc-attn-info = "vc_attn.registry:main"
+vc-attn-check = "vc_attn.check:main"
+vc-attn-report = "vc_attn.report:main"
+
+[project.urls]
+Repository = "https://github.com/MachGen/vc-attention"
+Issues = "https://github.com/MachGen/vc-attention/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+vc_attn = ["README.md", "**/README.md", "source_manifest.json", "native/*.cu", "native/*.cuh"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["gpu: requires an exclusively allocated Blackwell GPU", "large: exercises the fused large-sequence path"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = ["src/vc_attn/_kernels", "src/vc_attn/quantization.py"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

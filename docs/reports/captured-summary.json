@@ -1,0 +1,94 @@
+{
+  "fusedpipe20": {
+    "cases": [
+      {
+        "case_id": "l00-h7",
+        "control_ms": 6.451459121704102,
+        "candidate_ms": 6.401475143432617,
+        "speedup_control_over_candidate": 1.0078081968845516,
+        "wins": 17
+      },
+      {
+        "case_id": "l00-h56",
+        "control_ms": 56.68065185546875,
+        "candidate_ms": 55.950128173828126,
+        "speedup_control_over_candidate": 1.0130566936213445,
+        "wins": 20
+      },
+      {
+        "case_id": "l24-h7",
+        "control_ms": 6.3920385360717775,
+        "candidate_ms": 6.287897682189941,
+        "speedup_control_over_candidate": 1.0165621101273337,
+        "wins": 20
+      },
+      {
+        "case_id": "l24-h56",
+        "control_ms": 56.35376892089844,
+        "candidate_ms": 55.54020385742187,
+        "speedup_control_over_candidate": 1.0146482188932018,
+        "wins": 20
+      }
+    ]
+  },
+  "d20": {
+    "cases": [
+      {
+        "case_id": "l00-h7",
+        "control_ms": 6.365820693969727,
+        "candidate_ms": 6.3446815490722654,
+        "speedup_control_over_candidate": 1.0033317897413705,
+        "wins": 13
+      },
+      {
+        "case_id": "l00-h56",
+        "control_ms": 55.84220581054687,
+        "candidate_ms": 55.7180908203125,
+        "speedup_control_over_candidate": 1.0022275528182514,
+        "wins": 17
+      },
+      {
+        "case_id": "l24-h7",
+        "control_ms": 6.266524887084961,
+        "candidate_ms": 6.244124794006348,
+        "speedup_control_over_candidate": 1.00358738715474,
+        "wins": 14
+      },
+      {
+        "case_id": "l24-h56",
+        "control_ms": 55.22409362792969,
+        "candidate_ms": 55.14445190429687,
+        "speedup_control_over_candidate": 1.0014442381940987,
+        "wins": 12
+      }
+    ]
+  },
+  "historical_bf16_vs_d": {
+    "cases": [
+      {
+        "case_id": "l00-h7",
+        "bf16_ms": 13.656082916259766,
+        "d_ms": 6.3446815490722654,
+        "speedup_bf16_over_d": 2.1523669565821772
+      },
+      {
+        "case_id": "l00-h56",
+        "bf16_ms": 114.8235107421875,
+        "d_ms": 55.7180908203125,
+        "speedup_bf16_over_d": 2.0607940626050243
+      },
+      {
+        "case_id": "l24-h7",
+        "bf16_ms": 13.896109008789063,
+        "d_ms": 6.244124794006348,
+        "speedup_bf16_over_d": 2.2254694560441446
+      },
+      {
+        "case_id": "l24-h56",
+        "bf16_ms": 116.53919067382813,
+        "d_ms": 55.14445190429687,
+        "speedup_bf16_over_d": 2.1133438931641164
+      }
+    ]
+  }
+}

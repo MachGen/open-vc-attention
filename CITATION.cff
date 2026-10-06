@@ -1,0 +1,51 @@
+cff-version: 1.2.0
+message: "Please cite the software revision and the upstream FlashAttention papers."
+title: "VC Attention"
+type: software
+version: 0.1.2
+license: BSD-3-Clause
+authors:
+  - name: "VC Attention contributors"
+repository-code: "https://github.com/MachGen/vc-attention"
+references:
+  - type: article
+    title: "VC-Attention: Value Smoothing and Softmax Casting for Low-bit Attention"
+    authors:
+      - family-names: Li
+        given-names: Xingyang
+      - family-names: Zou
+        given-names: Dongyun
+      - family-names: Zhang
+        given-names: Shining
+      - family-names: Chen
+        given-names: Jiacheng
+      - family-names: Xi
+        given-names: Haocheng
+      - family-names: Zhang
+        given-names: Lvmin
+      - family-names: Zhu
+        given-names: Jun-Yan
+      - family-names: Han
+        given-names: Song
+      - family-names: Zhang
+        given-names: Zhekai
+      - family-names: Lin
+        given-names: Yujun
+      - family-names: Li
+        given-names: Muyang
+    year: 2026
+    url: "https://arxiv.org/abs/2609.15810"
+  - type: article
+    title: "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"
+    authors:
+      - family-names: Dao
+        given-names: Tri
+    year: 2022
+    url: "https://arxiv.org/abs/2205.14135"
+  - type: article
+    title: "FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning"
+    authors:
+      - family-names: Dao
+        given-names: Tri
+    year: 2023
+    url: "https://arxiv.org/abs/2307.08691"
