@@ -1,4 +1,4 @@
-# VC Attention
+# Open VC Attention
 
 Low-bit attention inference for **NVIDIA B200 and B300**, with a PyTorch API,
 reproducible benchmarks and optional framework adapters.
