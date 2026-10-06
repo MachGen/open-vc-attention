@@ -37,8 +37,9 @@ def audit(root=ROOT):
     )
     if kernels != ["blackwell"]:
         errors.append(f"Unexpected kernel trees: {kernels}")
-    if not (root / "docs/technical-report/report.en.md").is_file():
-        errors.append("Missing technical report: docs/technical-report/report.en.md")
+    for name in ("report.en.md", "Open-VC-Attention-Technical-Report.pdf"):
+        if not (root / "docs/technical-report" / name).is_file():
+            errors.append("Missing technical report file: docs/technical-report/" + name)
     errors += ["Benchmark record: " + e for e in _check_records(root / "benchmarks/results/b200")]
     for path in root.rglob("*"):
         rel = path.relative_to(root)

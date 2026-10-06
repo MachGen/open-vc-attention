@@ -4,6 +4,8 @@
 
 Code: <https://github.com/MachGen/open-vc-attention> · Package: `open-vc-attn` · License: BSD-3-Clause
 
+A typeset version of this report is available as a [PDF](Open-VC-Attention-Technical-Report.pdf).
+
 ## Abstract
 
 Attention dominates the cost of long-sequence video diffusion transformers. On NVIDIA Blackwell, FP8 doubles tensor-core throughput but not exponential throughput, so a straightforward FP8 attention kernel is limited by the softmax rather than by matrix multiplication. Open-VC Attention is an open-source FP8 forward-attention kernel for B200 and B300, built on the FlashAttention-4 CuTe DSL kernel. It adopts *ExpCast* from VC-Attention, which writes E4M3 probability codes directly from scores without an exponential, and schedules the kernel around it: scales folded into score conversion, a mid-window key traversal that settles the running maximum early, a packed-$V$ pipeline and fused input preparation. A budgeted $V$ residual repair gives a tunable accuracy–time trade-off. On B200, with activations captured from a MiniMax-H3 video model, the attention kernel sustains 2.70–2.76 PFLOP/s: 2.00–2.03× faster than upstream BF16 FlashAttention-4 (1.97–2.00× including FP8 preparation) and 1.21–1.23× faster than the VC-Attention method on the same kernel family, at 2.98–3.19% relative $L_2$ error. A 0.5% repair budget lowers that error by 1.90% for 1.55% more time.
@@ -410,7 +412,7 @@ A speedup is only as meaningful as its baseline. Upstream FA4 BF16 reaches 1.35�
 | 14 | 2.862% | 0.1317 | 8.75 | 2.989% | 0.1376 | 10.25 |
 | 56 | 2.870% | 0.1342 | 11.00 | 2.980% | 0.1393 | 12.12 |
 
-Table 10 gives the error of both FP8 implementations against the BF16 output. Open-VC's relative $L_2$ error is 2.98–3.19%; VC's is 2.86–3.09%, 3.1–4.3% lower in relative terms, below the 7.3–11.1% bound estimated in Section 4.8 for V-Smooth's effect. A 0.5% $V$ residual repair budget recovers about half of that gap on Open-VC (Section 5.5) without grouping or permuting the keys. For the probability encoding alone, Table 3 gives the per-element picture: ExpCast's RMS error is 3.30% against 2.65% for exponentiate-then-round. These numbers characterize single attention calls; Section 5.5 shows one qualitative generated-video example, but this report makes no general claim about generated-video quality.
+Table 10 gives the error of both FP8 implementations against the BF16 output. Open-VC's relative $L_2$ error is 2.98–3.19%; VC's is 2.86–3.09%, 3.1–4.3% lower in relative terms, below the 7.3–11.1% bound estimated in Section 4.8 for V-Smooth's effect. A 0.5% $V$ residual repair budget recovers about half of that gap on Open-VC (Section 5.5) without grouping or permuting the keys. For the probability encoding alone, Table 3 gives the per-element picture: ExpCast's RMS error is 3.30% against 2.65% for exponentiate-then-round. These numbers characterize single attention calls; this report makes no claim about generated-video quality.
 
 ### 5.5 $V$ residual repair
 
@@ -432,14 +434,6 @@ The shape of the curve says where $V$'s error lives. The first 0.5% of tokens, t
 ![Figure 5](figures/repair.png)
 
 **Figure 5.** Cost and benefit of $V$ residual repair (labels are budgets). Most of the error reduction comes from the first 0.5% of tokens; larger budgets trade more time for smaller additional gains.
-
-#### A qualitative example.
-
-Figure 6 shows the same frame from two MiniMax-H3 generations with the same prompt and seed, one with Open-VC and no repair and one with a 0.5% repair budget. Without repair, the face behind the visor collapses into a dark hollow; with repair it renders correctly. This is a single example, not a measurement.
-
-![Figure 6](figures/astronaut_repair.jpg)
-
-**Figure 6.** Visor close-up about 6 s into a MiniMax-H3 generation, same prompt and seed. Left: Open-VC without repair. Right: Open-VC with a 0.5% $V$ repair budget.
 
 ## 6 Conclusion
 

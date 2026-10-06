@@ -12,7 +12,7 @@ FP8 forward attention for NVIDIA Blackwell (B200 / B300), built on the FlashAtte
 
 <p align="center"><em>One iteration of the main loop for a 128-row query tile: tensor-core work (blue), CUDA-core softmax work (orange) and data movement (gray).</em></p>
 
-See the [technical report](docs/technical-report/report.en.md) for the design and its numerics.
+See the technical report ([Markdown](docs/technical-report/report.en.md) · [PDF](docs/technical-report/Open-VC-Attention-Technical-Report.pdf)) for the design and its numerics.
 
 ## Results
 
