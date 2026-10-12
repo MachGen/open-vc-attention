@@ -47,3 +47,38 @@ def pack_v(value: torch.Tensor) -> torch.Tensor:
     )
     result = buffer[..., :length].movedim(-1, -3)
     return result if value.ndim == 4 else result.squeeze(0)
+
+
+@triton.jit
+def transpose_v_blocked(
+    source,
+    target,
+    length: tl.constexpr,
+    heads: tl.constexpr,
+    blocks: tl.constexpr,
+):
+    tile = tl.program_id(0)
+    head = tl.program_id(1)
+    row = tile * 64 + tl.arange(0, 64)
+    col = tl.arange(0, 128)
+    value = tl.load(
+        source + row[:, None] * (heads * 128) + head * 128 + col[None, :], row[:, None] < length, 0
+    )
+    dst = target + (head * blocks + tile // 2) * 16384
+    offset = (tile % 2) * 64 + tl.arange(0, 64)
+    tl.store(dst + col[None, :] * 128 + offset[:, None], value)
+
+
+def pack_v_blocked(value: torch.Tensor) -> torch.Tensor:
+    length, heads, dim = value.shape
+    blocks = triton.cdiv(length, 128)
+    result = torch.empty((heads, blocks, dim, 128), device=value.device, dtype=value.dtype)
+    transpose_v_blocked[(blocks * 2, heads)](
+        value.view(torch.uint8),
+        result.view(torch.uint8),
+        length,
+        heads,
+        blocks,
+        num_warps=4,
+    )
+    return result

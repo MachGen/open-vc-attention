@@ -72,7 +72,11 @@ def _cast_pack_v(
     ).to(tl.float32)
     values = tl.clamp(values * (448.0 / amax), -448.0, 448.0)
     tl.store(
-        PACKED + head.to(tl.int64) * D * PADDED + cols[None, :] * PADDED + rows[:, None],
+        PACKED
+        + head.to(tl.int64) * D * PADDED
+        + (rows[:, None] // 128) * D * 128
+        + cols[None, :] * 128
+        + rows[:, None] % 128,
         values.to(PACKED.dtype.element_ty),
         rows[:, None] < PADDED,
     )
@@ -155,8 +159,10 @@ def prepare_fp8_fused(q, k, v, *, cu_seqlens=None):
             padded,
             num_warps=4,
         )
-        result = packed[..., :s].movedim(-1, 0)
+        result = packed.view(padded, h, d)[:s]
         layout = dict(
             cu_seqlens_q=cu_seqlens, cu_seqlens_k=cu_seqlens, max_seqlen_q=s, max_seqlen_k=s
         )
-        return PreparedFP8(q8, k8, result, qs, ks, vs, layout, shape, v_prepacked=True)
+        return PreparedFP8(
+            q8, k8, result, qs, ks, vs, layout, shape, v_prepacked=True, v_prepacked_blocked=True
+        )

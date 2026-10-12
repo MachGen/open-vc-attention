@@ -73,6 +73,8 @@ class PreparedFP8:
     layout: dict
     output_shape: tuple
     v_prepacked: bool = False
+    # Blocked storage is opaque: the [S,H,D] shape is metadata, not logical strides.
+    v_prepacked_blocked: bool = False
 
 
 @lru_cache(None)
@@ -83,13 +85,16 @@ def _packed_dsl_available():
         return False
 
 
-def _fused_preparation_eligible(q, k, v, *, version, mode, causal, return_lse):
+def _fused_preparation_eligible(
+    q, k, v, *, version, mode, causal, return_lse, mid_window_blocks=DEFAULT_MID_WINDOW_BLOCKS
+):
     """Mirror the public subset of the packed B200 dispatch without loading CUDA code."""
     return (
         version == DEFAULT_VERSION
         and mode == "expcast"
         and not causal
         and not return_lse
+        and mid_window_blocks in (4, None)
         and (q.ndim == 3 or (q.ndim == 4 and q.shape[0] == 1))
         and q.shape == k.shape == v.shape
         and q.shape[-3] >= 32768
@@ -152,6 +157,7 @@ def attention_fp8(
         if causal or return_lse:
             raise ValueError("Prepacked V requires dense Open-VC ExpCast without LSE")
         flags["v_prepacked"] = True
+        flags["v_prepacked_blocked"] = prepared.v_prepacked_blocked
     out, lse = raw_forward(
         prepared.q,
         prepared.k,
@@ -202,12 +208,19 @@ def attention(
     if preparation not in ("auto", "unfused", "fused"):
         raise ValueError("preparation must be auto, unfused, or fused")
     fuse = preparation != "unfused" and _fused_preparation_eligible(
-        q, k, v, version=version, mode=mode, causal=causal, return_lse=return_lse
+        q,
+        k,
+        v,
+        version=version,
+        mode=mode,
+        causal=causal,
+        return_lse=return_lse,
+        mid_window_blocks=mid_window_blocks,
     )
     if preparation == "fused" and not fuse:
         raise ValueError(
             "Fused preparation requires contiguous B200 single-sequence self-attention, "
-            "S >= 32768, DSL 4.6.2, dense Open-VC ExpCast and no LSE"
+            "S >= 32768, DSL 4.6.2, dense Open-VC ExpCast, mid_window_blocks=4 or None and no LSE"
         )
     if mode != "bf16":
         return attention_fp8(

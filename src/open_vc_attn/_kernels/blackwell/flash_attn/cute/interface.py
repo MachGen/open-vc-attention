@@ -176,6 +176,7 @@ def _flash_attn_fwd(
     v_smooth_scale: Optional[torch.Tensor] = None,
     repair_k_descale: Optional[torch.Tensor] = None,
     v_prepacked: bool = False,
+    v_prepacked_blocked: bool = False,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Forward pass for FlashAttention.
 
@@ -198,12 +199,15 @@ def _flash_attn_fwd(
         expcast: Encode probabilities directly as E4M3 (VC-Attention Eq. 7).
             Inference-only SM100-family path with FP8 V; defaults to False.
         v_prepacked: Consume the exact padded sequence-contiguous layout from
-            prepare_fp8_fused. Unsupported dispatches raise instead of unpacking.
+            pack_v, or blocked storage when v_prepacked_blocked is also True.
+            Unsupported dispatches raise instead of unpacking.
+        v_prepacked_blocked: Identify opaque [head, block, dim, key] storage
+            returned by prepare_fp8_fused on eligible B200 calls.
 
     Tuned NVFP4 QK / E4M3 PV ExpCast uses packed FP16 code rounding and early
     scale-stage release; other configurations use the generic encoder.
     """
-    if v_prepacked:
+    if v_prepacked and not v_prepacked_blocked:
         # Keep the logical [S,H,D] view: sequence is the contiguous dimension.
         # Reject malformed views before any normalization can silently unpack V.
         if v.ndim != 3:
@@ -804,8 +808,8 @@ def _flash_attn_fwd(
     else:
         aux_tensor_metadata = None
 
-    # Repacking pays off only for large dense calls. Ragged K starts can violate
-    # the K-major TMA alignment, so multi-sequence varlen keeps the original V.
+    # Ragged K starts can violate K-major TMA alignment, so multi-sequence
+    # varlen keeps the original V.
     fp8_varlen_expcast_packing = (
         expcast
         and _get_device_capability_minor() in (0, 3)
@@ -878,12 +882,29 @@ def _flash_attn_fwd(
             )
         )
     )
+    blocked_v = (
+        packed_v
+        and (not v_prepacked or v_prepacked_blocked)
+        and repair_k_descale is None
+        and not is_nvf4_qk
+        and cu_seqlens_q is not None
+        and cu_seqlens_k is not None
+        and mid_window_blocks in (4, None)
+        and CUTLASS_DSL_VERSION == "4.6.2"
+        and _get_device_capability_minor() == 0
+    )
     if v_prepacked and not packed_v:
         raise ValueError("v_prepacked requires the eligible dense packed-V path")
     if packed_v and not v_prepacked:
-        from open_vc_attn._kernels.blackwell.flash_attn.cute.v_layout import pack_v
+        from open_vc_attn._kernels.blackwell.flash_attn.cute.v_layout import pack_v, pack_v_blocked
 
-        v = pack_v(v)
+        v = pack_v_blocked(v) if blocked_v else pack_v(v)
+
+    if v_prepacked_blocked:
+        if not blocked_v or not v_prepacked:
+            raise ValueError("Blocked prepacked V requires the dense blocked-V path")
+        blocks = (seqlen_k + 127) // 128
+        v = v.as_strided((num_head, blocks, 128, 128), (blocks * 16384, 16384, 128, 1))
 
     inline_rescale = (
         packed_v
@@ -940,6 +961,7 @@ def _flash_attn_fwd(
         expcast,
         v_smooth,
         packed_v,
+        blocked_v,
         inline_rescale,
     )
     v_smooth_prefetch = v_smooth and cu_seqlens_q is not None and seqlen_k >= 4096
@@ -978,7 +1000,7 @@ def _flash_attn_fwd(
         else:
             q_tensor = to_cute_tensor(q)
             k_tensor = to_cute_tensor(k)
-        v_tensor = to_cute_tensor(v, leading_dim=v.ndim - 3 if packed_v else -1)
+        v_tensor = to_cute_tensor(v, leading_dim=v.ndim - 3 if packed_v and not blocked_v else -1)
         o_tensor = to_cute_tensor(out if not is_split_kv else out_partial)
         mSFQ_tensor = (
             to_cute_tensor(e4m3_scale_view(mSFQ), leading_dim=3, assumed_align=16)
@@ -1098,6 +1120,7 @@ def _flash_attn_fwd(
                 v_smooth_prefetch=v_smooth_prefetch,
                 v_smooth_head_major=v_smooth_head_major,
                 inline_rescale=inline_rescale,
+                blocked_v=blocked_v,
                 head_index_count=head_index_count,
                 use_block_sparsity=use_block_sparsity,
                 mid_window_blocks=mid_window_blocks,

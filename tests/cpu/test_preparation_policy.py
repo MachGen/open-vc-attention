@@ -50,7 +50,7 @@ def test_default_fuses_and_explicit_unfused_preserves_general_api(api):
 
 @pytest.mark.parametrize(
     "case",
-    ["short", "batch", "cross", "strided", "causal", "lse", "sm103", "dsl"],
+    ["short", "batch", "cross", "strided", "causal", "lse", "sm103", "dsl", "window"],
 )
 def test_ineligible_calls_preserve_general_preparation_and_forced_fusion_fails(api, case):
     q = k = v = tensor()
@@ -71,6 +71,8 @@ def test_ineligible_calls_preserve_general_preparation_and_forced_fusion_fails(a
         api.torch.cuda.get_device_capability.return_value = (10, 3)
     elif case == "dsl":
         api._packed_dsl_available.return_value = False
+    elif case == "window":
+        options["mid_window_blocks"] = 2
     api.attention(q, k, v, **options)
     api.prepare_fp8.assert_called_once_with(q, k, v)
     api.prepare_fp8_fused.assert_not_called()

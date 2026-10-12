@@ -45,24 +45,35 @@ def test_fused_codes_scales_outputs_and_launch_count(length, dtype, heads, monke
     plain = prepare_fp8(q, k, v)
     cu = torch.arange(2, device="cuda", dtype=torch.int32) * length
     fused = prepare_fp8_fused(q, k, v, cu_seqlens=cu)
-    for name in ("q", "k", "v"):
+    for name in ("q", "k"):
         assert torch.equal(
             getattr(plain, name).contiguous().view(torch.uint8),
             getattr(fused, name).contiguous().view(torch.uint8),
         ), name
+    padded = (length + 127) // 128 * 128
+    unpacked_v = (
+        fused.v.as_strided(
+            (heads, padded // 128, 128, 128),
+            (padded * 128, 16384, 128, 1),
+        )
+        .permute(1, 3, 0, 2)
+        .reshape(padded, heads, 128)[:length]
+    )
+    assert torch.equal(plain.v.view(torch.uint8), unpacked_v.contiguous().view(torch.uint8))
     blocks = (length + 127) // 128
     assert torch.equal(plain.q_descale, fused.q_descale[..., :blocks])
     assert torch.equal(plain.k_descale, fused.k_descale)
     assert torch.equal(plain.v_descale, fused.v_descale)
     assert fused.layout["cu_seqlens_q"] is cu
     assert fused.layout["cu_seqlens_k"] is cu
-    assert fused.v_prepacked and fused.v.stride(0) == 1
+    assert fused.v_prepacked and fused.v_prepacked_blocked
     expected = attention_fp8(plain)
 
     def unexpected_pack(_):
         raise AssertionError("Prepacked V must not be packed again")
 
     monkeypatch.setattr(v_layout, "pack_v", unexpected_pack)
+    monkeypatch.setattr(v_layout, "pack_v_blocked", unexpected_pack)
     assert torch.equal(expected, attention_fp8(fused))
     assert torch.equal(expected, attention(q, k, v))
     assert torch.equal(expected, attention(q, k, v, preparation="fused"))
@@ -101,6 +112,11 @@ def test_fused_graph_reads_updated_inputs_and_default_opt_out():
         attention(q, k, v, mid_window_blocks=None),
         attention(q, k, v, mid_window_blocks=None, preparation="unfused"),
     )
+    for window in (0, 2):
+        assert torch.equal(
+            attention(q, k, v, mid_window_blocks=window),
+            attention(q, k, v, mid_window_blocks=window, preparation="unfused"),
+        )
 
 
 def test_prepacked_contract_rejects_incompatible_options():
@@ -115,7 +131,7 @@ def test_prepacked_contract_rejects_incompatible_options():
         with pytest.raises(ValueError, match="Prepacked V"):
             attention_fp8(prepared, **options)
     with pytest.raises(ValueError, match="v_prepacked"):
-        attention_fp8(replace(prepared, v=prepared.v.contiguous()))
+        attention_fp8(replace(prepared, v_prepacked_blocked=False))
     with pytest.raises(ValueError, match="requires version"):
         attention_fp8(prepared, version="reference")
     for options in ({"causal": True}, {"return_lse": True}):

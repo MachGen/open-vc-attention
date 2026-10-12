@@ -84,12 +84,24 @@ def _prepack_v(prepared):
     """
     from dataclasses import replace
 
-    from .._kernels.blackwell.flash_attn.cute.v_layout import pack_v
+    import torch
+
+    from .._kernels.blackwell.flash_attn.cute.v_layout import pack_v, pack_v_blocked
     from ..api import attention_fp8
 
     if prepared.v_prepacked or prepared.v.ndim != 3:
         return prepared
-    packed = replace(prepared, v=pack_v(prepared.v), v_prepacked=True)
+    if torch.cuda.get_device_capability(prepared.v.device) == (10, 0):
+        physical = pack_v_blocked(prepared.v)
+        length, heads, dim = prepared.v.shape
+        packed = replace(
+            prepared,
+            v=physical.view(-1, heads, dim)[:length],
+            v_prepacked=True,
+            v_prepacked_blocked=True,
+        )
+    else:
+        packed = replace(prepared, v=pack_v(prepared.v), v_prepacked=True)
     try:
         attention_fp8(packed)
     except ValueError as exc:

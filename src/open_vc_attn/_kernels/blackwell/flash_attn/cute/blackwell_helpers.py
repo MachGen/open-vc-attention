@@ -405,6 +405,7 @@ def gemm_ptx_partial(
     mbar_wait_fraction_den: cutlass.Constexpr[int] = 4,
     pre_mbar_tiles: Optional[cutlass.Constexpr[int]] = None,
     extra_cols: cutlass.Constexpr[int] = 0,
+    desc_u64: cutlass.Constexpr[bool] = False,
 ) -> None:
     # acc_tmem_addr += acc_offset
     is_ts = op.a_src == cute.nvgpu.tcgen05.OperandSource.TMEM
@@ -488,7 +489,7 @@ def gemm_ptx_partial(
             ".reg .b32 smem_desc_a_lo_start, smem_desc_b_lo_start;\n\t"
             ".reg .b32 smem_desc_a_lo, smem_desc_b_lo;\n\t"
             ".reg .b32 smem_desc_a_hi, smem_desc_b_hi;\n\t"
-            ".reg .b64 smem_desc_a, smem_desc_b;\n\t"
+            ".reg .b64 smem_desc_a, smem_desc_b, smem_desc_a_start, smem_desc_b_start;\n\t"
             "elect.sync _|leader_thread, -1;\n\t"
             f"mov.b32 idesc, {hex(idesc)};\n\t"
             # f"mov.b32 tmem_acc, {hex(acc_tmem_addr)};\n\t"
@@ -499,17 +500,29 @@ def gemm_ptx_partial(
             f"mov.b32 smem_desc_b_hi, {hex(smem_desc_b_hi)};\n\t"
             f"mov.b64 smem_desc_a, {{smem_desc_a_lo_start, smem_desc_a_hi}};\n\t"
             f"mov.b64 smem_desc_b, {{smem_desc_b_lo_start, smem_desc_b_hi}};\n\t"
-            "setp.ne.b32 p, $2, 0;\n\t"
+            + (
+                "mov.b64 smem_desc_a_start, smem_desc_a;\n\tmov.b64 smem_desc_b_start, smem_desc_b;\n\t"
+                if const_expr(desc_u64)
+                else ""
+            )
+            + "setp.ne.b32 p, $2, 0;\n\t"
             f"@leader_thread tcgen05.mma.cta_group::1.kind::{kind} [tmem_acc], smem_desc_a, smem_desc_b, idesc, {pred_str};\n\t"
             + "".join(
                 (
                     # f"add.u32 smem_desc_a_lo, smem_desc_a_lo, {hex(offset_a_diff[k - 1])};\n\t"
                     # f"add.u32 smem_desc_b_lo, smem_desc_b_lo, {hex(offset_b_diff[k - 1])};\n\t"
-                    f"add.u32 smem_desc_a_lo, smem_desc_a_lo_start, {hex(offset_a[k])};\n\t"
-                    f"add.u32 smem_desc_b_lo, smem_desc_b_lo_start, {hex(offset_b[k])};\n\t"
-                    f"mov.b64 smem_desc_a, {{smem_desc_a_lo, smem_desc_a_hi}};\n\t"
-                    f"mov.b64 smem_desc_b, {{smem_desc_b_lo, smem_desc_b_hi}};\n\t"
-                    f"@leader_thread tcgen05.mma.cta_group::1.kind::{kind} [tmem_acc], smem_desc_a, smem_desc_b, idesc, 1;\n\t"
+                    (
+                        f"add.u64 smem_desc_a, smem_desc_a_start, {hex(offset_a[k])};\n\t"
+                        f"add.u64 smem_desc_b, smem_desc_b_start, {hex(offset_b[k])};\n\t"
+                        if const_expr(desc_u64)
+                        else (
+                            f"add.u32 smem_desc_a_lo, smem_desc_a_lo_start, {hex(offset_a[k])};\n\t"
+                            f"add.u32 smem_desc_b_lo, smem_desc_b_lo_start, {hex(offset_b[k])};\n\t"
+                            f"mov.b64 smem_desc_a, {{smem_desc_a_lo, smem_desc_a_hi}};\n\t"
+                            f"mov.b64 smem_desc_b, {{smem_desc_b_lo, smem_desc_b_hi}};\n\t"
+                        )
+                    )
+                    + f"@leader_thread tcgen05.mma.cta_group::1.kind::{kind} [tmem_acc], smem_desc_a, smem_desc_b, idesc, 1;\n\t"
                 )
                 for k in range(1, cute.size(tCrA.shape[2]))
             )
@@ -880,6 +893,69 @@ def tmem_ld_red_max(
                 if cute.arch.lane_idx() == 0:
                     cute.arch.mbarrier_arrive(early_release_mbar_ptr)
     return row_max
+
+
+@cute.jit
+def tmem_ld_selected_columns(tStS: cute.Tensor, tSrS: cute.Tensor, column_half: int):
+    from cutlass._mlir import ir as _ir
+
+    f32_ty = _ir.F32Type.get()
+    struct_ty = llvm.StructType.get_literal([f32_ty] * 64)
+    asm_str = (
+        "tcgen05.ld.sync.aligned.32x32b.x64.b32"
+        " {" + ", ".join(f"${i}" for i in range(64)) + "}"
+        ", [$64];\n"
+    )
+    tSrS.fill(-cutlass.Float32.inf)
+    result = llvm.inline_asm(
+        struct_ty,
+        [tStS[None, column_half * 2, None, None].iterator.toint().ir_value()],
+        asm_str,
+        "=f," * 64 + "r",
+        has_side_effects=True,
+        is_align_stack=False,
+        asm_dialect=llvm.AsmDialect.AD_ATT,
+    )
+    for i in cutlass.range_constexpr(64):
+        tSrS[column_half * 64 + i] = cutlass.Float32(llvm.extractvalue(f32_ty, result, [i]))
+
+
+@cute.jit
+def tmem_ld_selected_max(
+    tStS: cute.Tensor,
+    tSrS: cute.Tensor,
+    column_half: int,
+    n_block: cutlass.Int32,
+    mask_fn=None,
+) -> cutlass.Float32:
+    from cutlass._mlir import ir as _ir
+    from open_vc_attn._kernels.blackwell.flash_attn.cute.utils import expcast_tree_max
+
+    if cutlass.const_expr(mask_fn is not None):
+        tmem_ld_selected_columns(tStS, tSrS, column_half)
+        mask_fn(tSrS, n_block=n_block)
+        return expcast_tree_max(*[tSrS[i] for i in range(128)])
+    else:
+        f32_ty = _ir.F32Type.get()
+        struct_ty = llvm.StructType.get_literal([f32_ty] * 65)
+        asm_str = (
+            "tcgen05.ld.red.sync.aligned.32x32b.x64.f32.max"
+            " {" + ", ".join(f"${i}" for i in range(64)) + "}"
+            ", $64, [$65];\n"
+        )
+        tSrS.fill(-cutlass.Float32.inf)
+        result = llvm.inline_asm(
+            struct_ty,
+            [tStS[None, column_half * 2, None, None].iterator.toint().ir_value()],
+            asm_str,
+            "=f," * 65 + "r",
+            has_side_effects=True,
+            is_align_stack=False,
+            asm_dialect=llvm.AsmDialect.AD_ATT,
+        )
+        for i in cutlass.range_constexpr(64):
+            tSrS[column_half * 64 + i] = cutlass.Float32(llvm.extractvalue(f32_ty, result, [i]))
+        return cutlass.Float32(llvm.extractvalue(f32_ty, result, [64]))
 
 
 def _is_pure_fp8_mma(op: cute.nvgpu.tcgen05.mma.MmaOp) -> bool:

@@ -16,6 +16,17 @@ On eligible B200 `attention()` calls, step 1 runs as three fused kernels:
 2. V-amax reduction.
 3. V cast, pack and descale.
 
+On eligible B200 calls, the final preparation pass writes V directly in
+`[head, ceil(S/128), dimension, 128]` storage. `PreparedFP8.v_prepacked_blocked`
+identifies this opaque storage; its `[S,H,D]` view carries shape metadata and
+must not be read as a logical V tensor. Existing sequence-contiguous prepacked
+V remains supported. Early-QK scheduling issues the next score computation
+earlier to overlap the score, normalization and PV stages. Preparation and
+attention remain separate, stream-ordered kernels; no PDL is enabled.
+SM103 retains its existing sequence-contiguous packing.
+Custom mid-window sizes other than four use general preparation; explicit
+fused preparation requires a four-block window or the original scan (`None`).
+
 The packed V tensor is consumed directly by step 4. `prepare_fp8` remains the general preparation, and `preparation="unfused"` opts out of fusion.
 
 `v_repair.py` implements V residual repair:

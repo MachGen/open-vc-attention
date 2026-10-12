@@ -1,21 +1,18 @@
 # Copyright (c) 2025, Tri Dao.
 
-import math
 import hashlib
 import inspect
+import math
 import re
-from typing import Type, Callable, Optional, Tuple, overload
+from typing import Callable, Optional, Tuple, Type, overload
 
 import cutlass
 import cutlass.cute as cute
-
-from cutlass import Float32, Int32, const_expr
-from cutlass.cutlass_dsl import T, dsl_user_op
-from cutlass._mlir.dialects import nvvm, llvm
-from cutlass.cute.runtime import from_dlpack
-
-
 import quack.activation
+from cutlass import Float32, Int32, const_expr
+from cutlass._mlir.dialects import llvm, nvvm
+from cutlass.cute.runtime import from_dlpack
+from cutlass.cutlass_dsl import T, dsl_user_op
 
 _MIXER_ATTRS = ("__vec_size__",)
 
@@ -111,7 +108,9 @@ def convert_from_dlpack_leading_static(
 
 
 def make_tiled_copy_A(
-    copy_atom: cute.CopyAtom, tiled_mma: cute.TiledMma, swapAB: cutlass.Constexpr[bool] = False
+    copy_atom: cute.CopyAtom,
+    tiled_mma: cute.TiledMma,
+    swapAB: cutlass.Constexpr[bool] = False,
 ) -> cute.TiledCopy:
     if const_expr(swapAB):
         return cute.make_tiled_copy_B(copy_atom, tiled_mma)
@@ -120,7 +119,9 @@ def make_tiled_copy_A(
 
 
 def make_tiled_copy_B(
-    copy_atom: cute.CopyAtom, tiled_mma: cute.TiledMma, swapAB: cutlass.Constexpr[bool] = False
+    copy_atom: cute.CopyAtom,
+    tiled_mma: cute.TiledMma,
+    swapAB: cutlass.Constexpr[bool] = False,
 ) -> cute.TiledCopy:
     if const_expr(swapAB):
         return cute.make_tiled_copy_A(copy_atom, tiled_mma)
@@ -147,7 +148,9 @@ def mma_make_fragment_B(
 
 
 def get_smem_store_atom(
-    arch: cutlass.Constexpr[int], element_type: Type[cute.Numeric], transpose: bool = False
+    arch: cutlass.Constexpr[int],
+    element_type: Type[cute.Numeric],
+    transpose: bool = False,
 ) -> cute.CopyAtom:
     if const_expr(arch < 90 or element_type.width != 16):
         return cute.make_copy_atom(
@@ -206,7 +209,12 @@ def parse_swizzle_from_pointer(ptr: cute.Pointer) -> cute.Swizzle:
 
 @dsl_user_op
 def fmax(
-    a: float | Float32, b: float | Float32, c: float | Float32 | None = None, *, loc=None, ip=None
+    a: float | Float32,
+    b: float | Float32,
+    c: float | Float32 | None = None,
+    *,
+    loc=None,
+    ip=None,
 ) -> Float32:
     return Float32(
         nvvm.fmax(
@@ -221,7 +229,9 @@ def fmax(
 
 @cute.jit
 def fmax_reduce(
-    x: cute.TensorSSA, init_val: float | Float32 | None = None, arch: cutlass.Constexpr[int] = 80
+    x: cute.TensorSSA,
+    init_val: float | Float32 | None = None,
+    arch: cutlass.Constexpr[int] = 80,
 ) -> Float32:
     if const_expr(arch < 100 or cute.size(x.shape) % 8 != 0):
         # if const_expr(init_val is None):
@@ -317,7 +327,9 @@ def imax_reduce(x: cute.TensorSSA, init_val: cutlass.Int32 | None = None) -> cut
 
 @cute.jit
 def fadd_reduce(
-    x: cute.TensorSSA, init_val: float | Float32 | None = None, arch: cutlass.Constexpr[int] = 80
+    x: cute.TensorSSA,
+    init_val: float | Float32 | None = None,
+    arch: cutlass.Constexpr[int] = 80,
 ) -> Float32:
     if const_expr(arch < 100 or cute.size(x.shape) % 8 != 0):
         if const_expr(init_val is None):
@@ -380,7 +392,10 @@ def float_to_ordered_i32_bits(a: float | Float32, *, loc=None, ip=None) -> Int32
 def atomic_max_i32(a: int | Int32, gmem_ptr: cute.Pointer, *, loc=None, ip=None) -> None:
     """Atomic max on a gmem Int32 location."""
     nvvm.atomicrmw(
-        res=T.i32(), op=nvvm.AtomicOpKind.MAX, ptr=gmem_ptr.llvm_ptr, a=Int32(a).ir_value()
+        res=T.i32(),
+        op=nvvm.AtomicOpKind.MAX,
+        ptr=gmem_ptr.llvm_ptr,
+        a=Int32(a).ir_value(),
     )
 
 
@@ -408,7 +423,10 @@ def atomic_add_fp32(a: float | Float32, gmem_ptr: cute.Pointer, *, loc=None, ip=
     #     asm_dialect=llvm.AsmDialect.AD_ATT,
     # )
     nvvm.atomicrmw(
-        res=T.f32(), op=nvvm.AtomicOpKind.FADD, ptr=gmem_ptr.llvm_ptr, a=Float32(a).ir_value()
+        res=T.f32(),
+        op=nvvm.AtomicOpKind.FADD,
+        ptr=gmem_ptr.llvm_ptr,
+        a=Float32(a).ir_value(),
     )
 
 
@@ -422,7 +440,11 @@ def predicate_k(tAcA: cute.Tensor, limit: cutlass.Int32) -> cute.Tensor:
     # Only compute predicates for the "k" dimension. For the mn dimension, we will use "if"
     tApA = cute.make_rmem_tensor(
         cute.make_layout(
-            (cute.size(tAcA, mode=[0, 1]), cute.size(tAcA, mode=[1]), cute.size(tAcA, mode=[2])),
+            (
+                cute.size(tAcA, mode=[0, 1]),
+                cute.size(tAcA, mode=[1]),
+                cute.size(tAcA, mode=[2]),
+            ),
             stride=(cute.size(tAcA, mode=[2]), 0, 1),
         ),
         cutlass.Boolean,
@@ -984,3 +1006,83 @@ def expcast_tree_max(*scores: Float32, loc=None, ip=None) -> Float32:
         )
 
     return reduce(scores)
+
+
+@dsl_user_op
+def publish_P_reload_bias(
+    mbar_ptr: cute.Pointer, bias_ptr: cute.Pointer, bias: Float32, *, loc=None, ip=None
+):
+    result = llvm.inline_asm(
+        T.f32(),
+        [Int32(pointer.toint()).ir_value(loc=loc, ip=ip) for pointer in (mbar_ptr, bias_ptr)]
+        + [Float32(bias).ir_value(loc=loc, ip=ip)],
+        "{ st.volatile.shared.f32 [$2], $3; mbarrier.arrive.release.cta.shared::cta.b64 _, [$1]; ld.volatile.shared.f32 $0, [$2]; }",
+        "=f,r,r,f,~{memory}",
+        has_side_effects=True,
+        is_align_stack=False,
+        asm_dialect=llvm.AsmDialect.AD_ATT,
+        loc=loc,
+        ip=ip,
+    )
+    return Float32(result)
+
+
+@dsl_user_op
+def publish_shared_max(
+    mbar_ptr: cute.Pointer, maximum_ptr: cute.Pointer, value: Float32, *, loc=None, ip=None
+):
+    llvm.inline_asm(
+        None,
+        [Int32(pointer.toint()).ir_value(loc=loc, ip=ip) for pointer in (mbar_ptr, maximum_ptr)]
+        + [Float32(value).ir_value(loc=loc, ip=ip)],
+        "{ st.volatile.shared.f32 [$1], $2; mbarrier.arrive.release.cta.shared::cta.b64 _, [$0]; }",
+        "r,r,f,~{memory}",
+        has_side_effects=True,
+        is_align_stack=False,
+        asm_dialect=llvm.AsmDialect.AD_ATT,
+        loc=loc,
+        ip=ip,
+    )
+
+
+@dsl_user_op
+def load_shared_max_and_ack(
+    mbar_ptr: cute.Pointer, maximum_ptr: cute.Pointer, *, loc=None, ip=None
+) -> Float32:
+    result = llvm.inline_asm(
+        T.f32(),
+        [Int32(pointer.toint()).ir_value(loc=loc, ip=ip) for pointer in (maximum_ptr, mbar_ptr)],
+        "{ ld.volatile.shared.f32 $0, [$1]; mbarrier.arrive.release.cta.shared::cta.b64 _, [$2]; }",
+        "=f,r,r,~{memory}",
+        has_side_effects=True,
+        is_align_stack=False,
+        asm_dialect=llvm.AsmDialect.AD_ATT,
+        loc=loc,
+        ip=ip,
+    )
+    return Float32(result)
+
+
+@dsl_user_op
+def exchange_shared_max_named(
+    maximum_ptr: cute.Pointer,
+    peer_ptr: cute.Pointer,
+    maximum: Float32,
+    barrier_id: Int32,
+    *,
+    loc=None,
+    ip=None,
+) -> Float32:
+    result = llvm.inline_asm(
+        T.f32(),
+        [Int32(pointer.toint()).ir_value(loc=loc, ip=ip) for pointer in (maximum_ptr, peer_ptr)]
+        + [Float32(maximum).ir_value(loc=loc, ip=ip), Int32(barrier_id).ir_value(loc=loc, ip=ip)],
+        "{ st.volatile.shared.f32 [$1], $3; barrier.cta.sync $4, 256; ld.volatile.shared.f32 $0, [$2]; barrier.cta.sync $4, 256; }",
+        "=f,r,r,f,r,~{memory}",
+        has_side_effects=True,
+        is_align_stack=False,
+        asm_dialect=llvm.AsmDialect.AD_ATT,
+        loc=loc,
+        ip=ip,
+    )
+    return Float32(result)
